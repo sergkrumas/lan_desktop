@@ -122,8 +122,8 @@ class StartWindow(QMainWindow):
         self.setWindowTitle('LAN-DEKSTOP EXPLORER')
         self.setCentralWidget(main_widget)
         self.setFont(QFont("Times", 14, QFont.Normal))
+        self.center_window()
         self.show()
-        self.afterShow()
 
         self.some_signal.connect(lambda: None)
 
@@ -133,14 +133,10 @@ class StartWindow(QMainWindow):
         else:
             remove_from_startup(self.STARTUP_CONFIG[0])
 
-    def afterShow(self):
-        self.resize(100, 0)
-        app = QApplication.instance()
-        # desktop.width()//2 -- because we have two monitors
-        m = 1 #first monitor
-        # m = 3 #second monitor
-        x = (app.desktop().width() // 2*m - self.frameSize().width()) // 2
-        y = (app.desktop().height() - self.frameSize().height()) // 2
+    def center_window(self):
+        window_rect = QDesktopWidget().screenGeometry(screen=0)
+        x = (window_rect.width() - self.frameSize().width()) // 2
+        y = (window_rect.height() - self.frameSize().height()) // 2
         self.move(x, y)
 
 
