@@ -90,7 +90,7 @@ class StartWindow(QMainWindow):
         self.child_layout.addWidget(self.title_label)
         self.child_layout.addWidget(self.black_text_label)
 
-        self.gray_text_label = QLabel("<center>gray_label text</center>")
+        self.gray_text_label = QLabel("<center>gray text label</center>")
         style_sheet = "font: 13pt; font-weight:bold; color: #aaaaaa; font-family: consolas;"
         self.gray_text_label.setStyleSheet(style_sheet)
 
@@ -216,7 +216,7 @@ def main():
     if stray_icon:
         stray_icon.hide()
 
-    sys.exit()    
+    sys.exit()
 
 if __name__ == '__main__':
     try:
