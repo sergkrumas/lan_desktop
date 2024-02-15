@@ -503,7 +503,50 @@ class ChatDialog(QDialog):
         self.myNickName = ''
         self.tableFormat = QTextTableFormat()
 
-        uic.loadUi('chatdialog.ui', self) # Load the .ui file
+        # uic.loadUi('chatdialog.ui', self) # Load the .ui file
+
+
+        self.setGeometry(0, 0, 1000, 349)
+        self.setWindowTitle('Chat')
+
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(9, 9, 9, 9)
+        main_layout.setSpacing(6)
+
+        layout_h = QHBoxLayout()
+        layout_h.setContentsMargins(0, 0, 0, 0)
+        layout_h.setSpacing(6)
+        main_layout.addLayout(layout_h)
+
+        self.textEdit = QTextEdit()
+        self.textEdit.setFocusPolicy(Qt.NoFocus)
+
+        self.listWidget = QListWidget()
+        self.listWidget.setMaximumSize(400, 2000)
+        self.listWidget.setFocusPolicy(Qt.NoFocus)
+
+        if True:
+            splitter = QSplitter(Qt.Horizontal)
+            splitter.addWidget(self.textEdit)
+            splitter.addWidget(self.listWidget)
+            layout_h.addWidget(splitter)
+        else:
+            layout_h.addWidget(self.textEdit)
+            layout_h.addWidget(self.listWidget)
+
+        layout_h2 = QHBoxLayout()
+        layout_h2.setContentsMargins(0, 0, 0, 0)
+        layout_h2.setSpacing(6)
+        main_layout.addLayout(layout_h2)
+
+        self.label = QLabel()
+        self.label.setText('Message:')
+
+        self.lineEdit = QLineEdit()
+        self.setLayout(main_layout)
+        layout_h2.addWidget(self.label)
+        layout_h2.addWidget(self.lineEdit)
+
 
         self.lineEdit.setFocusPolicy(Qt.StrongFocus)
         self.textEdit.setFocusPolicy(Qt.NoFocus)
@@ -520,6 +563,10 @@ class ChatDialog(QDialog):
 
         self.tableFormat.setBorder(0);
         QTimer.singleShot(10 * 1000, self.showInformation)
+
+        rect = self.frameGeometry()
+        rect.moveCenter(QDesktopWidget().availableGeometry().center())
+        self.move(rect.topLeft())
 
     def appendMessage(self, _from, message):
         if (not _from) or (not message):
