@@ -40,21 +40,6 @@ class Connection(QObject):
         Pong = 2
         Greeting = 3
         Undefined = 4
-    Q_ENUMS(DataType)
-
-    # 
-    # Protocol is defined as follows, using the CBOR Data Definition Language:
-    # 
-    # protocol    = [
-    #    greeting,        ; must start with a greeting command
-    #    * command        ; zero or more regular commands after
-    # ]
-    # command     = plaintext / ping / pong / greeting
-    # plaintext   = { 0 => text }
-    # ping        = { 1 => null }
-    # pong        = { 2 => null }
-    # greeting    = { 3 => text }
-    # 
 
     readyForUse = pyqtSignal()
     newMessage = pyqtSignal(str, str)
