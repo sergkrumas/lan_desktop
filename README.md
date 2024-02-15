@@ -1,5 +1,5 @@
 
-# [Russian] LAN-DESKTOP Explorer v0.1 for Windows by Sergei Krumas [PyQt]
+# [PyQt] [Russian] LAN-DESKTOP Explorer v0.1 for Windows by Sergei Krumas
 
 LAN-DESKTOP Explorer в пределах локальной сети позволяет как управлять удалённым компьютером, так и позволить удалённому компьютеру управлять вашим компьютером.
 
