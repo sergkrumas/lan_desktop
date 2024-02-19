@@ -51,7 +51,7 @@ class Connection(QObject):
 
     class states():
         readSize = 0
-        readData = 1        
+        readData = 1
 
     def __init__(self, parent, client_socket=None):
         super().__init__()
@@ -352,7 +352,7 @@ class PeerManager(QObject):
         self.serverPort = port
 
     def userName(self):
-        return self.username 
+        return self.username
 
     def startBroadcasting(self):
         self.broadcastTimer.start()
