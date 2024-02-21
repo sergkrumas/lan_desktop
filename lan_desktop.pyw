@@ -76,7 +76,7 @@ class StartWindow(QMainWindow):
 
         self.setStyleSheet("QPushButton{ padding: 10px 20px; font: 11pt; margin: 0 100; }")
 
-        self.title_label = QLabel("<center>LAN-DESKTOP<br>EXPLORER</center>")
+        self.title_label = QLabel("<center>LAN-DESKTOP</center>")
         self.title_label.setStyleSheet("font-weight:bold; font-size: 30pt; color: gray;")
 
         self.black_text_label = QLabel("<center> black text label</center>" )
@@ -119,7 +119,7 @@ class StartWindow(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(self.root_layout)
 
-        self.setWindowTitle('LAN-DEKSTOP EXPLORER')
+        self.setWindowTitle('LAN-DEKSTOP')
         self.setCentralWidget(main_widget)
         self.setFont(QFont("Times", 14, QFont.Normal))
         self.center_window()
@@ -143,7 +143,7 @@ class StartWindow(QMainWindow):
 def show_system_tray(app, icon):
     sti = QSystemTrayIcon(app)
     sti.setIcon(icon)
-    sti.setToolTip(f"LAN-DESKTOP Explorer {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
+    sti.setToolTip(f"LAN-DESKTOP {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
     app.setProperty("stray_icon", sti)
     @pyqtSlot()
     def on_trayicon_activated(reason):
