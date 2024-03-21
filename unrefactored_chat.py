@@ -12,21 +12,83 @@ import sys
 import time
 
 import cbor2
+import platform
 
 MaxBufferSize = 1024000
 
-TransferTimeout = 30 * 1000
-PongTimeout = 60 * 1000
+PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
+
+PingInterval = 3 * 1000
 
 
 BROADCASTINTERVAL = 2000
 BROADCASTPORT = 45000
 
+
+
+
+
+def make_screenshot_pyqt():
+    desktop = QDesktopWidget()
+    MAX = 1000000000
+    left = MAX
+    right = -MAX
+    top = MAX
+    bottom = -MAX
+    for i in range(0, desktop.screenCount()):
+        r = desktop.screenGeometry(screen=i)
+        left = min(r.left(), left)
+        right = max(r.right(), right)
+        top = min(r.top(), top)
+        bottom = max(r.bottom(), bottom)
+    all_monitors_zone = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
+
+    # print(all_monitors_zone)
+    qimage = QImage(
+        all_monitors_zone.width(),
+        all_monitors_zone.height(),
+        QImage.Format_RGB32
+    )
+    qimage.fill(Qt.black)
+
+    painter = QPainter()
+    painter.begin(qimage)
+    screens = QGuiApplication.screens()
+    for n, screen in enumerate(screens):
+        p = screen.grabWindow(0)
+        source_rect = QRect(QPoint(0, 0), screen.geometry().size())
+        painter.drawPixmap(screen.geometry(), p, source_rect)
+    painter.end()
+    return qimage
+
 def prepare_data_to_write(data_obj):
     data = cbor2.dumps(data_obj)
     data_length = len(data)
     data_to_sent = data_length.to_bytes(4, 'big') + data
+    return data_to_sent
+
+
+
+
+def prepare_screenshot_to_transfer():
+    image = make_screenshot_pyqt()
+
+    byte_array = QByteArray()
+    buffer = QBuffer(byte_array)
+    buffer.open(QIODevice.WriteOnly)
+    image.save(buffer, "jpg")
+
+    data = byte_array.data()
+    data_length = len(data)
+    data_to_sent = data_length.to_bytes(4, 'big') + data
+
+    # testing
+    # input_byte_array = QByteArray(data)
+    # i = QImage()
+    # i.loadFromData(input_byte_array, "jpg");
+    # print(i.size())
+
     return data_to_sent
 
 
@@ -97,13 +159,14 @@ class Connection(QObject):
 
         # print('try read')
 
-        self.socket_buffer = self.socket_buffer + self.socket.read(2**10)
+        self.socket_buffer = self.socket_buffer + self.socket.read(max(2**10, self.data_size))
 
         if self.readState == self.states.readSize:
             if len(self.socket_buffer) >= self.SIZE_INT_SIZE:
                 data, self.socket_buffer = slice_data(self.socket_buffer, self.SIZE_INT_SIZE)
                 self.data_size = int.from_bytes(data, 'big')
                 self.readState = self.states.readData
+                print('data_size', self.data_size)
                 # print('size read', self.data_size)
             else:
                 pass
@@ -153,21 +216,38 @@ class Connection(QObject):
                     self.readState = self.states.readSize
 
                 except Exception as e:
-                    print(e, 'aborting...')
-                    socket.abort()
+
+                    try:
+
+                        input_byte_array = QByteArray(data)
+                        i = QImage()
+                        i.loadFromData(input_byte_array, "jpg");
+                        print(f'recieved image, {i.size()}')
+                        filename = f'{time.time()}.jpg'
+                        i.save(filename)
+
+                        self.data_size = 0
+                        self.readState = self.states.readSize
+
+                    except:
+                        print(e, 'aborting...')
+                        socket.abort()
 
             else:
-                pass
-                # print('not enough data to read cbor data')
+                print('not enough data to read', len(self.socket_buffer), self.data_size)
 
     def sendPing(self):
         if self.pongTime.elapsed() > PongTimeout:
             # self.abort()
             return
 
-        self.socket.write(
-            prepare_data_to_write({self.DataType.Ping: ''})
-        )
+        if platform.system() == 'Linux' or chat_dialog.checkbox.isChecked():
+            data = prepare_screenshot_to_transfer()
+            print(f'send screenshot {len(data)}')
+            self.socket.write(data)
+        else:
+            print('send ping')
+            self.socket.write(prepare_data_to_write({self.DataType.Ping: ''}))
 
     def sendGreetingMessage(self):
         self.socket.write(
@@ -510,6 +590,8 @@ class ChatDialog(QDialog):
         self.listWidget.setMaximumSize(400, 2000)
         self.listWidget.setFocusPolicy(Qt.NoFocus)
 
+        self.checkbox = QCheckBox('Send Screenshot')
+        main_layout.addWidget(self.checkbox)
         if True:
             splitter = QSplitter(Qt.Horizontal)
             splitter.addWidget(self.textEdit)
@@ -531,6 +613,8 @@ class ChatDialog(QDialog):
         self.setLayout(main_layout)
         layout_h2.addWidget(self.label)
         layout_h2.addWidget(self.lineEdit)
+
+
 
 
         self.lineEdit.setFocusPolicy(Qt.StrongFocus)
@@ -614,8 +698,9 @@ class ChatDialog(QDialog):
 def main():
     app = QApplication(sys.argv)
 
-    dialog = ChatDialog()
-    dialog.show()
+    global chat_dialog
+    chat_dialog = ChatDialog()
+    chat_dialog.show()
 
     app.exec()
 
