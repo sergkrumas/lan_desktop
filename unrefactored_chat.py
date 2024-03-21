@@ -14,19 +14,24 @@ import time
 import cbor2
 import platform
 
+
+from _utils import (fit_rect_into_rect, )
+
+
+
 MaxBufferSize = 1024000
 
 PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
 
-PingInterval = 3 * 1000
+PingInterval = 1 * 1000
 
 
 BROADCASTINTERVAL = 2000
 BROADCASTPORT = 45000
 
 
-
+viewer = None
 
 
 def make_screenshot_pyqt():
@@ -90,6 +95,38 @@ def prepare_screenshot_to_transfer():
     # print(i.size())
 
     return data_to_sent
+
+
+class Viewer(QWidget):
+
+    def __init__(self):
+        super().__init__()
+        self.image_to_show = None
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        if self.image_to_show is not None:
+            source_rect = self.image_to_show.rect()
+            dest_rect = fit_rect_into_rect(source_rect, self.rect())
+            painter.drawImage(dest_rect, self.image_to_show, source_rect)
+        painter.end()
+
+    def closeEvent(self, event):
+        global viewer
+        viewer = None
+
+def show_screenshot_in_window(image):
+
+    global viewer
+    if viewer is None:
+        viewer = Viewer()
+        viewer.resize(1200, 900)
+        viewer.move(10, 10)
+        viewer.show()
+
+    viewer.image_to_show = image
+    viewer.update()
 
 
 
@@ -220,11 +257,13 @@ class Connection(QObject):
                     try:
 
                         input_byte_array = QByteArray(data)
-                        i = QImage()
-                        i.loadFromData(input_byte_array, "jpg");
-                        print(f'recieved image, {i.size()}')
-                        filename = f'{time.time()}.jpg'
-                        i.save(filename)
+                        image = QImage()
+                        image.loadFromData(input_byte_array, "jpg");
+                        print(f'recieved image, {image.size()}')
+                        # filename = f'{time.time()}.jpg'
+                        # image.save(filename)
+
+                        show_screenshot_in_window(image)
 
                         self.data_size = 0
                         self.readState = self.states.readSize
