@@ -85,7 +85,7 @@ def make_capture_frame(capture_index):
 
 
 
-def prepare_data_to_write(serial_data=None, binary_data=None):
+def prepare_data_to_write(serial_data=None, binary_attachment_data=None):
     if serial_data is not None:
         serial_binary = cbor2.dumps(serial_data)
         serial_length = len(serial_binary)
@@ -93,9 +93,9 @@ def prepare_data_to_write(serial_data=None, binary_data=None):
         serial_binary = b''
         serial_length = 0
 
-    if binary_data is not None:
-        bin_binary = binary_data
-        bin_length = len(binary_data)
+    if binary_attachment_data is not None:
+        bin_binary = binary_attachment_data
+        bin_length = len(binary_attachment_data)
     else:
         bin_binary = b''
         bin_length = 0
@@ -116,7 +116,7 @@ def prepare_screenshot_to_transfer(capture_index):
 
     return prepare_data_to_write(
             serial_data=capture_rect_tuple,
-            binary_data=byte_array.data(),
+            binary_attachment_data=byte_array.data(),
     )
 
 
