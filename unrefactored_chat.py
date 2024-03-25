@@ -682,6 +682,8 @@ class ChatDialog(QDialog):
         self.capture_combobox.addItem('Все', -1)
         for i in range(0, desktop.screenCount()):
             self.capture_combobox.addItem(f'Монитор {i+1}', i)
+        # по дефолту выдаём содержимое первого монитора
+        self.capture_combobox.setCurrentIndex(1)
 
 
         hor_layout.addWidget(self.capture_combobox)
