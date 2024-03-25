@@ -37,7 +37,7 @@ INT_SIZE = 4
 TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 
 
-def make_screenshot_pyqt():
+def make_capture_frame(capture_index):
     desktop = QDesktopWidget()
     MAX = 1000000000
     left = MAX
@@ -45,17 +45,20 @@ def make_screenshot_pyqt():
     top = MAX
     bottom = -MAX
     for i in range(0, desktop.screenCount()):
+        if capture_index != -1:
+            if i != capture_index:
+                continue
         r = desktop.screenGeometry(screen=i)
         left = min(r.left(), left)
         right = max(r.right(), right)
         top = min(r.top(), top)
         bottom = max(r.bottom(), bottom)
-    all_monitors_zone = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
+    capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
 
-    # print(all_monitors_zone)
+    # print(capture_rect)
     qimage = QImage(
-        all_monitors_zone.width(),
-        all_monitors_zone.height(),
+        capture_rect.width(),
+        capture_rect.height(),
         QImage.Format_RGB32
     )
     qimage.fill(Qt.black)
@@ -63,12 +66,19 @@ def make_screenshot_pyqt():
     painter = QPainter()
     painter.begin(qimage)
     screens = QGuiApplication.screens()
-    for n, screen in enumerate(screens):
-        p = screen.grabWindow(0)
-        source_rect = QRect(QPoint(0, 0), screen.geometry().size())
-        painter.drawPixmap(screen.geometry(), p, source_rect)
+    if capture_index == -1:
+        for n, screen in enumerate(screens):
+            p = screen.grabWindow(0)
+            source_rect = QRect(QPoint(0, 0), screen.geometry().size())
+            painter.drawPixmap(screen.geometry(), p, source_rect)
+    else:
+        for n, screen in enumerate(screens):
+            if capture_index == n:
+                painter.drawPixmap(QPoint(0, 0), screen.grabWindow(0))
+                break
     painter.end()
-    return qimage
+
+    return qimage, capture_rect
 
 
 
@@ -94,15 +104,20 @@ def prepare_data_to_write(serial_data=None, binary_data=None):
     data_to_sent = header + serial_binary + bin_binary
     return data_to_sent
 
-def prepare_screenshot_to_transfer():
-    image = make_screenshot_pyqt()
+def prepare_screenshot_to_transfer(capture_index):
+    image, capture_rect = make_capture_frame(capture_index)
 
     byte_array = QByteArray()
     buffer = QBuffer(byte_array)
     buffer.open(QIODevice.WriteOnly)
     image.save(buffer, "jpg")
 
-    return prepare_data_to_write(binary_data=byte_array.data())
+    capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.right(), capture_rect.bottom()]
+
+    return prepare_data_to_write(
+            serial_data=capture_rect_tuple,
+            binary_data=byte_array.data(),
+    )
 
 
 class Viewer(QWidget):
@@ -239,33 +254,36 @@ class Connection(QObject):
                     if cbor2_data:
                         parsed_data = cbor2.loads(cbor2_data)
 
-                        self.currentDataType, value = list(parsed_data.items())[0]
-                        if self.currentDataType == self.DataType.Greeting:
+                        if isinstance(parsed_data, dict):
+                            self.currentDataType, value = list(parsed_data.items())[0]
+                            if self.currentDataType == self.DataType.Greeting:
 
-                            addr = self.socket.peerAddress().toString()
-                            port = self.socket.peerPort()
+                                addr = self.socket.peerAddress().toString()
+                                port = self.socket.peerPort()
 
-                            self.username = f'{value}@{addr}:{port}'
+                                self.username = f'{value}@{addr}:{port}'
 
-                            if not self.socket.isValid():
-                                self.socket.abort()
-                                return
+                                if not self.socket.isValid():
+                                    self.socket.abort()
+                                    return
 
-                            if not self.isGreetingMessageSent:
-                                self.sendGreetingMessage()
+                                if not self.isGreetingMessageSent:
+                                    self.sendGreetingMessage()
 
-                            self.pingTimer.start()
-                            self.pongTime.start()
-                            self.readyForUse.emit()
+                                self.pingTimer.start()
+                                self.pongTime.start()
+                                self.readyForUse.emit()
 
-                        elif self.currentDataType == self.DataType.PlainText:
-                            self.newMessage.emit(self.username, value)
+                            elif self.currentDataType == self.DataType.PlainText:
+                                self.newMessage.emit(self.username, value)
 
-                        elif self.currentDataType == self.DataType.Ping:
-                            self.socket.write(prepare_data_to_write(serial_data={self.DataType.Pong: ''}))
+                            elif self.currentDataType == self.DataType.Ping:
+                                self.socket.write(prepare_data_to_write(serial_data={self.DataType.Pong: ''}))
 
-                        elif self.currentDataType == self.DataType.Pong:
-                            self.pongTime.restart()
+                            elif self.currentDataType == self.DataType.Pong:
+                                self.pongTime.restart()
+                        else:
+                            print(parsed_data)
 
                     if binary_data:
 
@@ -297,7 +315,8 @@ class Connection(QObject):
             return
 
         if chat_dialog.remote_control_chb.isChecked():
-            data = prepare_screenshot_to_transfer()
+            capture_index = chat_dialog.retrieve_capture_index()
+            data = prepare_screenshot_to_transfer(capture_index)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
         else:
@@ -653,8 +672,20 @@ class ChatDialog(QDialog):
         self.listWidget.setFocusPolicy(Qt.NoFocus)
 
         self.remote_control_chb = QCheckBox('Allow Remote Control')
-        main_layout.addWidget(self.remote_control_chb)
 
+        hor_layout = QHBoxLayout()
+        hor_layout.addWidget(self.remote_control_chb)
+
+        self.capture_combobox = QComboBox()
+
+        desktop = QDesktopWidget()
+        self.capture_combobox.addItem('Все', -1)
+        for i in range(0, desktop.screenCount()):
+            self.capture_combobox.addItem(f'Монитор {i+1}', i)
+
+
+        hor_layout.addWidget(self.capture_combobox)
+        main_layout.addLayout(hor_layout)
 
         if platform.system() == 'Linux':
             self.remote_control_chb.setChecked(True)
@@ -703,6 +734,11 @@ class ChatDialog(QDialog):
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
+
+    def retrieve_capture_index(self):
+        index = self.capture_combobox.currentIndex()
+        data = self.capture_combobox.itemData(index)
+        return data
 
     def appendMessage(self, _from, message):
         if (not _from) or (not message):
