@@ -25,7 +25,8 @@ MaxBufferSize = 1024000
 PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
 
-PingInterval = 1 * 1000
+# PingInterval = 1 * 1000
+PingInterval = 500
 
 
 BROADCASTINTERVAL = 2000
@@ -89,7 +90,7 @@ def make_capture_frame(capture_index):
 
 
 
-def prepare_data_to_write(serial_data=None, binary_attachment_data=None):
+def prepare_data_to_write(serial_data, binary_attachment_data):
     if serial_data is not None:
         serial_binary = cbor2.dumps(serial_data)
         serial_length = len(serial_binary)
@@ -106,6 +107,9 @@ def prepare_data_to_write(serial_data=None, binary_attachment_data=None):
     total_data_length = serial_length + bin_length
     header = total_data_length.to_bytes(INT_SIZE, 'big') + serial_length.to_bytes(INT_SIZE, 'big') + bin_length.to_bytes(INT_SIZE, 'big')
     data_to_sent = header + serial_binary + bin_binary
+
+    # print('prepare_data_to_write', serial_data)
+
     return data_to_sent
 
 def prepare_screenshot_to_transfer(capture_index):
@@ -118,10 +122,7 @@ def prepare_screenshot_to_transfer(capture_index):
 
     capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.right(), capture_rect.bottom()]
 
-    return prepare_data_to_write(
-            serial_data=capture_rect_tuple,
-            binary_attachment_data=byte_array.data(),
-    )
+    return prepare_data_to_write(capture_rect_tuple, byte_array.data())
 
 
 
@@ -139,6 +140,11 @@ class Viewer(QWidget):
         super().__init__()
         self.image_to_show = None
         self.setMouseTracking(True)
+
+        self.mouse_timer = QTimer()
+        self.mouse_timer.setInterval(200)
+        self.mouse_timer.timeout.connect(self.mouseTimerHandler)
+        self.mouse_timer.start()
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -165,6 +171,17 @@ class Viewer(QWidget):
         global viewer
         viewer = None
 
+    def mouseTimerHandler(self):
+        # передавать данные из mouseMoveEvent нельзя,
+        # потому что он слишком часто триггерится и заваливает данными ведомое приложение,
+        # по крайней мере на приложуха в виртуалке Linux захлёбывается
+        if self.image_to_show is not None:
+            mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
+            x = mapped_cursor_pos.x()
+            y = mapped_cursor_pos.y()
+            mouse_data_dict = {DataType.MouseData: [x, y]}
+            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+
     def mouseMoveEvent(self, event):
         self.update()
 
@@ -178,17 +195,18 @@ class Viewer(QWidget):
         if event.key() == Qt.Key_Escape:
             quit_app()
 
-def show_capture_window(image, capture_rect):
+def show_capture_window(image, capture_rect, connection):
 
     global viewer
     if viewer is None:
         viewer = Viewer()
-        viewer.resize(1200, 900)
+        viewer.resize(capture_rect.width(), capture_rect.height())
         viewer.move(10, 10)
         viewer.show()
 
     viewer.image_to_show = image
     viewer.capture_rect = capture_rect
+    viewer.connection = connection
     viewer.update()
 
 class DataType:
@@ -253,10 +271,10 @@ class Connection(QObject):
     def sendMessage(self, message):
         if not message:
             return False
-        self.socket.write(prepare_data_to_write(serial_data={DataType.PlainText: message}))
+        self.socket.write(prepare_data_to_write({DataType.PlainText: message}, None))
         return True
 
-    def processReadyRead(self,):
+    def processReadyRead(self):
 
         def retrieve_data(length):
             data = self.socket_buffer
@@ -265,93 +283,104 @@ class Connection(QObject):
             self.socket_buffer = left_data
             return requested_data
 
-        # print('try read')
-
         self.socket_buffer = self.socket_buffer + self.socket.read(max(2**10, self.content_data_size))
 
-        if self.readState == self.states.readSize:
-            if len(self.socket_buffer) >= TCP_MESSAGE_HEADER_SIZE:
-                self.content_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
-                self.cbor2_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
-                self.binary_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
-                self.readState = self.states.readData
-                print('content_data_size', self.content_data_size)
-                # print('size read', self.content_data_size)
-            else:
-                pass
-                # print('not enough data to read the data size')
+        self.data_full_to_read = True
 
-        # здесь обязательно, чтобы было if, и не было else if
-        # это нужно для того, чтобы сразу прочитать данные,
-        # если они уже есть и не ставить сообщение в очередь через emit
-        if self.readState == self.states.readData:
-            if self.content_data_size < 0:
-                raise Exception('Fuck!')
+        # while len(self.socket_buffer) > TCP_MESSAGE_HEADER_SIZE and self.data_full_to_read:
+        if True:
+            if self.readState == self.states.readSize:
+                if len(self.socket_buffer) >= TCP_MESSAGE_HEADER_SIZE:
+                    self.content_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
+                    self.cbor2_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
+                    self.binary_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
+                    self.readState = self.states.readData
+                    print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer))
+                    # print('size read', self.content_data_size)
+                else:
+                    pass
+                    # print('not enough data to read the data size')
 
-            if len(self.socket_buffer) >= self.content_data_size:
-                cbor2_data = retrieve_data(self.cbor2_data_size)
-                binary_data = retrieve_data(self.binary_data_size)
+            # здесь обязательно, чтобы было if, и не было else if
+            # это нужно для того, чтобы сразу прочитать данные,
+            # если они уже есть и не ставить сообщение в очередь через emit
+            if self.readState == self.states.readData:
+                if self.content_data_size < 0:
+                    raise Exception('Fuck!')
 
-                try:
+                if len(self.socket_buffer) >= self.content_data_size:
+                    cbor2_data = retrieve_data(self.cbor2_data_size)
+                    binary_data = retrieve_data(self.binary_data_size)
 
-                    capture_rect_coords = None
+                    try:
 
-                    if cbor2_data:
-                        parsed_data = cbor2.loads(cbor2_data)
+                        capture_rect_coords = None
 
-                        if isinstance(parsed_data, dict):
-                            self.currentDataType, value = list(parsed_data.items())[0]
-                            if self.currentDataType == DataType.Greeting:
+                        if cbor2_data:
+                            parsed_data = cbor2.loads(cbor2_data)
 
-                                addr = self.socket.peerAddress().toString()
-                                port = self.socket.peerPort()
+                            if isinstance(parsed_data, dict):
+                                self.currentDataType, value = list(parsed_data.items())[0]
+                                if self.currentDataType == DataType.Greeting:
 
-                                self.username = f'{value}@{addr}:{port}'
+                                    addr = self.socket.peerAddress().toString()
+                                    port = self.socket.peerPort()
 
-                                if not self.socket.isValid():
-                                    self.socket.abort()
-                                    return
+                                    self.username = f'{value}@{addr}:{port}'
 
-                                if not self.isGreetingMessageSent:
-                                    self.sendGreetingMessage()
+                                    if not self.isGreetingMessageSent:
+                                        self.sendGreetingMessage()
 
-                                self.pingTimer.start()
-                                self.pongTime.start()
-                                self.readyForUse.emit()
+                                    self.pingTimer.start()
+                                    self.pongTime.start()
+                                    self.readyForUse.emit()
 
-                            elif self.currentDataType == DataType.PlainText:
-                                self.newMessage.emit(self.username, value)
+                                elif self.currentDataType == DataType.PlainText:
+                                    self.newMessage.emit(self.username, value)
 
-                            elif self.currentDataType == DataType.Ping:
-                                self.socket.write(prepare_data_to_write(serial_data={DataType.Pong: ''}))
+                                elif self.currentDataType == DataType.Ping:
+                                    self.socket.write(prepare_data_to_write({DataType.Pong: ''}, None))
 
-                            elif self.currentDataType == DataType.Pong:
-                                self.pongTime.restart()
-                        else:
-                            print(parsed_data)
-                            capture_rect_coords = parsed_data
+                                elif self.currentDataType == DataType.Pong:
+                                    self.pongTime.restart()
 
-                    if binary_data:
+                                elif self.currentDataType == DataType.MouseData:
+                                    x, y = value
+                                    # print('mouse_coords', value, self.currentDataType)
+                                    pyautogui.moveTo(x, y)
 
-                        input_byte_array = QByteArray(binary_data)
-                        capture_image = QImage()
-                        capture_image.loadFromData(input_byte_array, "jpg");
-                        print(f'recieved image, {capture_image.size()}')
+                            else:
+                                print(parsed_data)
+                                capture_rect_coords = parsed_data
 
-                        show_capture_window(capture_image, QRect(*capture_rect_coords))
+                        if binary_data:
 
-                except Exception as e:
-                    raise
-                    print(e, 'aborting...')
-                    socket.abort()
+                            input_byte_array = QByteArray(binary_data)
+                            capture_image = QImage()
+                            capture_image.loadFromData(input_byte_array, "jpg");
+                            print(f'recieved image, {capture_image.size()}')
+
+                            show_capture_window(capture_image, QRect(*capture_rect_coords), self)
+
+                    except Exception as e:
+                        raise
+                        print(e, 'aborting...')
+                        socket.abort()
+
+                        if not self.socket.isValid():
+                            self.socket.abort()
+                            return
 
 
+                    self.content_data_size = 0
+                    self.readState = self.states.readSize
 
-                self.content_data_size = 0
-                self.readState = self.states.readSize
+                else:
+                    self.data_full_to_read = False
+                    print('not enough data to read', len(self.socket_buffer), self.content_data_size)
 
-            else:
-                print('not enough data to read', len(self.socket_buffer), self.content_data_size)
+        if self.data_full_to_read and len(self.socket_buffer) > TCP_MESSAGE_HEADER_SIZE:
+            self.socket.readyRead.emit()
 
     def sendPing(self):
         if self.pongTime.elapsed() > PongTimeout:
@@ -365,11 +394,11 @@ class Connection(QObject):
             self.socket.write(data)
         else:
             print('send ping')
-            self.socket.write(prepare_data_to_write(serial_data={DataType.Ping: ''}))
+            self.socket.write(prepare_data_to_write({DataType.Ping: ''}, None))
 
     def sendGreetingMessage(self):
         self.socket.write(
-            prepare_data_to_write(serial_data={DataType.Greeting: self.greetingMessage})
+            prepare_data_to_write({DataType.Greeting: self.greetingMessage}, None)
         )
         self.isGreetingMessageSent = True
 
