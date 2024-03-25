@@ -174,6 +174,8 @@ class DataType:
     Pong = 2
     Greeting = 3
     Undefined = 4
+    MouseData = 5
+    KeyboardData = 6
 
 
 
