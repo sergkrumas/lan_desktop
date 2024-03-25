@@ -137,19 +137,41 @@ class Viewer(QWidget):
     def __init__(self):
         super().__init__()
         self.image_to_show = None
+        self.setMouseTracking(True)
 
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
+
         if self.image_to_show is not None:
-            source_rect = self.image_to_show.rect()
-            dest_rect = fit_rect_into_rect(source_rect, self.rect())
-            painter.drawImage(dest_rect, self.image_to_show, source_rect)
+            image_rect = self.image_to_show.rect()
+            viewport_rect = self.get_viewport_rect()
+
+            mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
+            if viewport_rect.contains(mapped_cursor_pos):
+                painter.setOpacity(1.0)
+            else:
+                painter.setOpacity(0.95)
+
+            painter.drawImage(viewport_rect, self.image_to_show, image_rect)
         painter.end()
+
+    def get_viewport_rect(self):
+        image_rect = self.image_to_show.rect()
+        return fit_rect_into_rect(image_rect, self.rect())
 
     def closeEvent(self, event):
         global viewer
         viewer = None
+
+    def mouseMoveEvent(self, event):
+        self.update()
+
+    def mousePressEvent(self, event):
+        pass
+
+    def mouseReleaseEvent(self, event):
+        pass
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
