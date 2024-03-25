@@ -120,6 +120,15 @@ def prepare_screenshot_to_transfer(capture_index):
     )
 
 
+
+def quit_app():
+    app = QApplication.instance()
+    app.quit()
+
+
+
+
+
 class Viewer(QWidget):
 
     def __init__(self):
@@ -138,6 +147,10 @@ class Viewer(QWidget):
     def closeEvent(self, event):
         global viewer
         viewer = None
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            quit_app()
 
 def show_capture_window(image, capture_rect):
 
@@ -159,10 +172,10 @@ class DataType:
     Greeting = 3
     Undefined = 4
 
+
+
+
 class Connection(QObject):
-
-
-
 
     readyForUse = pyqtSignal()
     newMessage = pyqtSignal(str, str)
@@ -801,6 +814,11 @@ class ChatDialog(QDialog):
         return
         # if self.listWidget.count() == 1:
         #     QMessageBox.information(self, "Chat", "Launch several instances of this program on your local network and start chatting!")
+
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            quit_app()
 
 
 def main():
