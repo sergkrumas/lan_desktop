@@ -152,17 +152,17 @@ def show_capture_window(image, capture_rect):
     viewer.capture_rect = capture_rect
     viewer.update()
 
-
+class DataType:
+    PlainText = 0
+    Ping = 1
+    Pong = 2
+    Greeting = 3
+    Undefined = 4
 
 class Connection(QObject):
 
 
-    class DataType:
-        PlainText = 0
-        Ping = 1
-        Pong = 2
-        Greeting = 3
-        Undefined = 4
+
 
     readyForUse = pyqtSignal()
     newMessage = pyqtSignal(str, str)
@@ -188,7 +188,7 @@ class Connection(QObject):
         self.buffer = ''
 
         self.pingTimer.setInterval(PingInterval)
-        self.currentDataType = self.DataType.Undefined
+        self.currentDataType = DataType.Undefined
         self.isGreetingMessageSent = False
 
         self.socket.readyRead.connect(self.processReadyRead)
@@ -212,7 +212,7 @@ class Connection(QObject):
     def sendMessage(self, message):
         if not message:
             return False
-        self.socket.write(prepare_data_to_write(serial_data={self.DataType.PlainText: message}))
+        self.socket.write(prepare_data_to_write(serial_data={DataType.PlainText: message}))
         return True
 
     def processReadyRead(self,):
@@ -260,7 +260,7 @@ class Connection(QObject):
 
                         if isinstance(parsed_data, dict):
                             self.currentDataType, value = list(parsed_data.items())[0]
-                            if self.currentDataType == self.DataType.Greeting:
+                            if self.currentDataType == DataType.Greeting:
 
                                 addr = self.socket.peerAddress().toString()
                                 port = self.socket.peerPort()
@@ -278,13 +278,13 @@ class Connection(QObject):
                                 self.pongTime.start()
                                 self.readyForUse.emit()
 
-                            elif self.currentDataType == self.DataType.PlainText:
+                            elif self.currentDataType == DataType.PlainText:
                                 self.newMessage.emit(self.username, value)
 
-                            elif self.currentDataType == self.DataType.Ping:
-                                self.socket.write(prepare_data_to_write(serial_data={self.DataType.Pong: ''}))
+                            elif self.currentDataType == DataType.Ping:
+                                self.socket.write(prepare_data_to_write(serial_data={DataType.Pong: ''}))
 
-                            elif self.currentDataType == self.DataType.Pong:
+                            elif self.currentDataType == DataType.Pong:
                                 self.pongTime.restart()
                         else:
                             print(parsed_data)
@@ -324,11 +324,11 @@ class Connection(QObject):
             self.socket.write(data)
         else:
             print('send ping')
-            self.socket.write(prepare_data_to_write(serial_data={self.DataType.Ping: ''}))
+            self.socket.write(prepare_data_to_write(serial_data={DataType.Ping: ''}))
 
     def sendGreetingMessage(self):
         self.socket.write(
-            prepare_data_to_write(serial_data={self.DataType.Greeting: self.greetingMessage})
+            prepare_data_to_write(serial_data={DataType.Greeting: self.greetingMessage})
         )
         self.isGreetingMessageSent = True
 
