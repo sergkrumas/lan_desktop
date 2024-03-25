@@ -139,7 +139,7 @@ class Viewer(QWidget):
         global viewer
         viewer = None
 
-def show_screenshot_in_window(image):
+def show_capture_window(image):
 
     global viewer
     if viewer is None:
@@ -294,7 +294,7 @@ class Connection(QObject):
                         # filename = f'{time.time()}.jpg'
                         # image.save(filename)
 
-                        show_screenshot_in_window(image)
+                        show_capture_window(image)
 
                 except Exception as e:
                     raise
