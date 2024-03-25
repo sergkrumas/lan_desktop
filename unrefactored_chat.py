@@ -139,7 +139,7 @@ class Viewer(QWidget):
         global viewer
         viewer = None
 
-def show_capture_window(image):
+def show_capture_window(image, capture_rect):
 
     global viewer
     if viewer is None:
@@ -149,6 +149,7 @@ def show_capture_window(image):
         viewer.show()
 
     viewer.image_to_show = image
+    viewer.capture_rect = capture_rect
     viewer.update()
 
 
@@ -251,6 +252,9 @@ class Connection(QObject):
                 binary_data = retrieve_data(self.binary_data_size)
 
                 try:
+
+                    capture_rect_coords = None
+
                     if cbor2_data:
                         parsed_data = cbor2.loads(cbor2_data)
 
@@ -284,17 +288,16 @@ class Connection(QObject):
                                 self.pongTime.restart()
                         else:
                             print(parsed_data)
+                            capture_rect_coords = parsed_data
 
                     if binary_data:
 
                         input_byte_array = QByteArray(binary_data)
-                        image = QImage()
-                        image.loadFromData(input_byte_array, "jpg");
-                        print(f'recieved image, {image.size()}')
-                        # filename = f'{time.time()}.jpg'
-                        # image.save(filename)
+                        capture_image = QImage()
+                        capture_image.loadFromData(input_byte_array, "jpg");
+                        print(f'recieved image, {capture_image.size()}')
 
-                        show_capture_window(image)
+                        show_capture_window(capture_image, QRect(*capture_rect_coords))
 
                 except Exception as e:
                     raise
