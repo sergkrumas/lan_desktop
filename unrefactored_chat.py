@@ -33,6 +33,8 @@ BROADCASTPORT = 45000
 
 viewer = None
 
+INT_SIZE = 4
+
 
 def make_screenshot_pyqt():
     desktop = QDesktopWidget()
@@ -87,8 +89,7 @@ def prepare_data_to_write(serial_data=None, binary_data=None):
         bin_binary = b''
         bin_length = 0
     total_data_length = serial_length + bin_length
-    header = total_data_length.to_bytes(4, 'big') + \
-                                serial_length.to_bytes(4, 'big') + bin_length.to_bytes(4, 'big')
+    header = total_data_length.to_bytes(INT_SIZE, 'big') + serial_length.to_bytes(INT_SIZE, 'big') + bin_length.to_bytes(INT_SIZE, 'big')
     data_to_sent = header + serial_binary + bin_binary
     return data_to_sent
 
@@ -180,8 +181,7 @@ class Connection(QObject):
 
         self.socket_buffer = bytes()
         self.readState = self.states.readSize
-        self.INT_SIZE = 4
-        self.HEADER_SIZE = self.INT_SIZE*3
+        self.HEADER_SIZE = INT_SIZE*3
 
         self.content_data_size = 0
         self.cbor2_data_size = 0
@@ -213,9 +213,9 @@ class Connection(QObject):
 
         if self.readState == self.states.readSize:
             if len(self.socket_buffer) >= self.HEADER_SIZE:
-                self.content_data_size = int.from_bytes(retrieve_data(self.socket_buffer, self.INT_SIZE), 'big')
-                self.cbor2_data_size = int.from_bytes(retrieve_data(self.socket_buffer, self.INT_SIZE), 'big')
-                self.binary_data_size = int.from_bytes(retrieve_data(self.socket_buffer, self.INT_SIZE), 'big')
+                self.content_data_size = int.from_bytes(retrieve_data(self.socket_buffer, INT_SIZE), 'big')
+                self.cbor2_data_size = int.from_bytes(retrieve_data(self.socket_buffer, INT_SIZE), 'big')
+                self.binary_data_size = int.from_bytes(retrieve_data(self.socket_buffer, INT_SIZE), 'big')
                 self.readState = self.states.readData
                 print('content_data_size', self.content_data_size)
                 # print('size read', self.content_data_size)
