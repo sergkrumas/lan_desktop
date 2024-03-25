@@ -53,7 +53,10 @@ def make_capture_frame(capture_index):
         right = max(r.right(), right)
         top = min(r.top(), top)
         bottom = max(r.bottom(), bottom)
-    capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
+    if capture_index == -1:
+        capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
+    else:
+        capture_rect = QRect(QPoint(left, top), QPoint(right, bottom))
 
     # print(capture_rect)
     qimage = QImage(
