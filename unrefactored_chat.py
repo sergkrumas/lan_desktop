@@ -296,9 +296,9 @@ class Connection(QObject):
             # self.abort()
             return
 
-        if platform.system() == 'Linux' or chat_dialog.checkbox.isChecked():
+        if chat_dialog.remote_control_chb.isChecked():
             data = prepare_screenshot_to_transfer()
-            print(f'send screenshot {len(data)}')
+            print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
         else:
             print('send ping')
@@ -652,8 +652,13 @@ class ChatDialog(QDialog):
         self.listWidget.setMaximumSize(400, 2000)
         self.listWidget.setFocusPolicy(Qt.NoFocus)
 
-        self.checkbox = QCheckBox('Send Screenshot')
-        main_layout.addWidget(self.checkbox)
+        self.remote_control_chb = QCheckBox('Allow Remote Control')
+        main_layout.addWidget(self.remote_control_chb)
+
+
+        if platform.system() == 'Linux':
+            self.remote_control_chb.setChecked(True)
+
         if True:
             splitter = QSplitter(Qt.Horizontal)
             splitter.addWidget(self.textEdit)
