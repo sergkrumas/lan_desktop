@@ -1,6 +1,9 @@
 
 
 
+import sys
+import time
+import platform
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -8,11 +11,9 @@ from PyQt5.QtGui import *
 from PyQt5.QtNetwork import *
 
 from PyQt5 import uic
-import sys
-import time
 
 import cbor2
-import platform
+import pyautogui
 
 
 from _utils import (fit_rect_into_rect, )
