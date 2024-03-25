@@ -34,6 +34,7 @@ BROADCASTPORT = 45000
 viewer = None
 
 INT_SIZE = 4
+TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 
 
 def make_screenshot_pyqt():
@@ -181,7 +182,6 @@ class Connection(QObject):
 
         self.socket_buffer = bytes()
         self.readState = self.states.readSize
-        self.HEADER_SIZE = INT_SIZE*3
 
         self.content_data_size = 0
         self.cbor2_data_size = 0
@@ -201,7 +201,8 @@ class Connection(QObject):
 
     def processReadyRead(self,):
 
-        def retrieve_data(data, length):
+        def retrieve_data(length):
+            data = self.socket_buffer
             requested_data = data[:length]
             left_data = data[length:]
             self.socket_buffer = left_data
@@ -212,10 +213,10 @@ class Connection(QObject):
         self.socket_buffer = self.socket_buffer + self.socket.read(max(2**10, self.content_data_size))
 
         if self.readState == self.states.readSize:
-            if len(self.socket_buffer) >= self.HEADER_SIZE:
-                self.content_data_size = int.from_bytes(retrieve_data(self.socket_buffer, INT_SIZE), 'big')
-                self.cbor2_data_size = int.from_bytes(retrieve_data(self.socket_buffer, INT_SIZE), 'big')
-                self.binary_data_size = int.from_bytes(retrieve_data(self.socket_buffer, INT_SIZE), 'big')
+            if len(self.socket_buffer) >= TCP_MESSAGE_HEADER_SIZE:
+                self.content_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
+                self.cbor2_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
+                self.binary_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                 self.readState = self.states.readData
                 print('content_data_size', self.content_data_size)
                 # print('size read', self.content_data_size)
@@ -231,8 +232,8 @@ class Connection(QObject):
                 raise Exception('Fuck!')
 
             if len(self.socket_buffer) >= self.content_data_size:
-                cbor2_data = retrieve_data(self.socket_buffer, self.cbor2_data_size)
-                binary_data = retrieve_data(self.socket_buffer, self.binary_data_size)
+                cbor2_data = retrieve_data(self.cbor2_data_size)
+                binary_data = retrieve_data(self.binary_data_size)
 
                 try:
                     if cbor2_data:
