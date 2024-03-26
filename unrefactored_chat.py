@@ -17,7 +17,7 @@ import pyautogui
 
 
 from _utils import (fit_rect_into_rect, )
-
+from functools import partial
 
 
 MaxBufferSize = 1024000
@@ -161,10 +161,25 @@ class Viewer(QWidget):
 
         self.menuBar = QMenuBar(self)
 
-        exitMenu = self.menuBar.addMenu('Application')
+        appMenu = self.menuBar.addMenu('Application')
         exitAction = QAction('Exit', self)
         exitAction.triggered.connect(quit_app)
-        exitMenu.addAction(exitAction)
+        appMenu.addAction(exitAction)
+
+        keyboard_send_actions_data = (
+        )
+        keyboardMenu = self.menuBar.addMenu('Keyboard')
+
+
+        def send_hotkey(hotkey_list):
+            data_key = 'keyHotkey'
+            key_data_dict = {DataType.KeyboardData: {data_key: hotkey_list}}
+            self.connection.socket.write(prepare_data_to_write(key_data_dict, None))
+
+        for text, args in keyboard_send_actions_data:
+            action = QAction(text, self)
+            action.triggered.connect(partial(send_hotkey, args))
+            keyboardMenu.addAction(action)
 
         self.key_attr_names = {getattr(Qt, attrname): attrname for attrname in dir(Qt) if attrname.startswith('Key_')}
         self.keys_log = []
