@@ -207,7 +207,7 @@ class Viewer(QWidget):
         value = min(1.0, value)
         value = max(0.0, value)
         return value
-    
+
     def triggerKeyTranslationError(self):
         self.key_translate_error_timestamp = time.time()
 
