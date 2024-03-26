@@ -133,6 +133,13 @@ def quit_app():
 
 
 
+class TransparentWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setWindowFlag(QtFramelessWindowHint)
+
+
 
 class Viewer(QWidget):
 
