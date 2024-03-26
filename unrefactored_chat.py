@@ -175,33 +175,52 @@ class Viewer(QWidget):
         # передавать данные из mouseMoveEvent нельзя,
         # потому что он слишком часто триггерится и заваливает данными ведомое приложение,
         # по крайней мере на приложуха в виртуалке Linux захлёбывается
+        if self.isViewportReadyAndCursorInsideViewport():
+            x, y = self.mapViewportToClient()
+            mouse_data_dict = {DataType.MouseData: {'mousePos': [x, y]}}
+            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+
+    def mapViewportToClient(self):
+        mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
+        viewport_rect = self.get_viewport_rect()
+        x = mapped_cursor_pos.x()
+        y = mapped_cursor_pos.y()
+
+        # mapping from viewport to client capture rect
+        viewport_pos = mapped_cursor_pos - viewport_rect.topLeft()
+        norm_x = viewport_pos.x() / viewport_rect.width()
+        norm_y = viewport_pos.y() / viewport_rect.height()
+        # print(viewport_pos, norm_x, norm_y)
+        x = int(norm_x*self.image_to_show.width()) 
+        y = int(norm_y*self.image_to_show.height())
+        return x, y
+
+
+    def isViewportReadyAndCursorInsideViewport(self):
         if self.image_to_show is not None:
             mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
             viewport_rect = self.get_viewport_rect()
-            if viewport_rect.contains(mapped_cursor_pos):            
-                x = mapped_cursor_pos.x()
-                y = mapped_cursor_pos.y()
+            if viewport_rect.contains(mapped_cursor_pos):
+                return True
+        return False
 
-                viewport_pos = mapped_cursor_pos - viewport_rect.topLeft() 
-
-                norm_x = viewport_pos.x() / viewport_rect.width()
-                norm_y = viewport_pos.y() / viewport_rect.height()
-                print(viewport_pos, norm_x, norm_y)
-
-                x = int(norm_x*self.image_to_show.width()) 
-                y = int(norm_y*self.image_to_show.height())
-
-                mouse_data_dict = {DataType.MouseData: [x, y]}
-                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def mouseMoveEvent(self, event):
         self.update()
 
     def mousePressEvent(self, event):
-        pass
+        if self.isViewportReadyAndCursorInsideViewport():
+            if event.button() == Qt.LeftButton:
+                mouse_data_dict = {DataType.MouseData: {'mouseDownLeft': None}}
+                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+                pass
 
     def mouseReleaseEvent(self, event):
-        pass
+        if self.isViewportReadyAndCursorInsideViewport():
+            if event.button() == Qt.LeftButton:
+                mouse_data_dict = {DataType.MouseData: {'mouseUpLeft': None}}
+                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))                
+                pass
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -357,9 +376,21 @@ class Connection(QObject):
                                     self.pongTime.restart()
 
                                 elif self.currentDataType == DataType.MouseData:
-                                    x, y = value
-                                    # print('mouse_coords', value, self.currentDataType)
-                                    pyautogui.moveTo(x, y)
+
+                                    mouse_data = value
+                                    item = list(mouse_data.items())[0]
+                                    mouse_type = item[0]
+                                    mouse_value = item[1]
+
+                                    if mouse_type == 'mousePos':
+                                        x, y = mouse_value
+                                        pyautogui.moveTo(x, y)
+                                    elif mouse_type == 'mouseDownLeft':
+                                        pyautogui.mouseDown(button='left')
+                                    elif mouse_type == 'mouseUpLeft':
+                                        pyautogui.mouseUp(button='left')
+
+                                    print(mouse_data)
 
                             else:
                                 print(parsed_data)
