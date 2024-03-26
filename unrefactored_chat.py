@@ -146,6 +146,21 @@ class Viewer(QWidget):
         self.mouse_timer.timeout.connect(self.mouseTimerHandler)
         self.mouse_timer.start()
 
+        # self.menuBar = menuBar = self.menuBar()
+        # # Creating menus using a QMenu object
+        # fileMenu = QMenu("&File", self)
+        # menuBar.addMenu(fileMenu)
+        # # Creating menus using a title
+        # editMenu = menuBar.addMenu("&Edit")
+        # helpMenu = menuBar.addMenu("&Help")
+
+
+        self.myQMenuBar = QMenuBar(self)
+        exitMenu = self.myQMenuBar.addMenu('Application')
+        exitAction = QAction('Exit', self)        
+        exitAction.triggered.connect(quit_app)
+        exitMenu.addAction(exitAction)
+
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
@@ -237,8 +252,11 @@ class Viewer(QWidget):
         self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            quit_app()
+
+        print('........... !!!!!!!!!!!!!!! ........', event.key())
+
+        # if event.key() == Qt.Key_Escape:
+        #     quit_app()
 
 def show_capture_window(image, capture_rect, connection):
 
