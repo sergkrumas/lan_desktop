@@ -317,13 +317,22 @@ class Viewer(QWidget):
         mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
         self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
+    def sendKeyData(self, event, data_key):
+        pyautogui_arg = self.translateQtKeyEventDataToPyautoguiArgumentValue(event)
+        if pyautogui_arg:
+            key_data_dict = {DataType.KeyboardData: {data_key: pyautogui_arg}}
+            print(key_data_dict)
+            self.connection.socket.write(prepare_data_to_write(key_data_dict, None))
+
     def keyPressEvent(self, event):
         key_name_attr = self.key_attr_names.get(event.key(), None)
         self.addToKeysLog('down', key_name_attr)
+        self.sendKeyData(event, 'keyDown')
 
     def keyReleaseEvent(self, event):
         key_name_attr = self.key_attr_names.get(event.key(), None)
         self.addToKeysLog('up', key_name_attr)
+        self.sendKeyData(event, 'keyUp')
 
 def show_capture_window(image, capture_rect, connection):
 
@@ -510,6 +519,19 @@ class Connection(QObject):
                                             pyautogui.scroll(-1)
 
                                     print(mouse_data)
+
+                                elif self.currentDataType == DataType.KeyboardData:
+                                    keyboard_data = value
+                                    item = list(keyboard_data.items())[0]
+                                    event_type = item[0]
+                                    key_value = item[1]
+
+                                    if event_type == 'keyDown':
+                                        pyautogui.keyDown(key_value)
+                                    elif event_type == 'keyUp':
+                                        pyautogui.keyUp(key_value)
+
+
 
                             else:
                                 print(parsed_data)
