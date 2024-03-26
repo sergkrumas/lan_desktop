@@ -251,6 +251,10 @@ class Viewer(QWidget):
         mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
         self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
+    def keyPressEvent(self, event):
+
+        print('....................>>>>>>>>>>>>>..........', event.key())
+
     def keyReleaseEvent(self, event):
 
         print('........... !!!!!!!!!!!!!!! ........', event.key())
@@ -270,6 +274,9 @@ def show_capture_window(image, capture_rect, connection):
     viewer.image_to_show = image
     viewer.capture_rect = capture_rect
     viewer.connection = connection
+    address = connection.socket.peerAddress().toString()
+    title = f'Viewport for {address}'    
+    viewer.setWindowTitle(title)
     viewer.update()
 
 class DataType:
