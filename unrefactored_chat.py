@@ -221,6 +221,8 @@ class Viewer(QWidget):
             return attr_name
         elif event.text() in self.allowed_pyautogui_args:
             return event.text()
+        elif event.key() == Qt.Key_Meta:
+            return 'win'
         else:
             return None
 
