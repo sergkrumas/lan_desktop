@@ -213,7 +213,9 @@ class Viewer(QWidget):
             if event.button() == Qt.LeftButton:
                 data_key = 'mouseDownLeft'
             elif event.button() == Qt.RightButton:
-                data_key = 'mouseDownRight'                
+                data_key = 'mouseDownRight'
+            elif event.button() == Qt.MiddleButton:
+                data_key = 'mouseDownMiddle'
             mouse_data_dict = {DataType.MouseData: {data_key: None}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
@@ -224,6 +226,8 @@ class Viewer(QWidget):
                 data_key = 'mouseUpLeft'
             elif event.button() == Qt.RightButton:
                 data_key = 'mouseUpRight'
+            elif event.button() == Qt.MiddleButton:
+                data_key = 'mouseUpMiddle'
             mouse_data_dict = {DataType.MouseData: {data_key: None}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
@@ -394,10 +398,16 @@ class Connection(QObject):
                                         pyautogui.mouseDown(button='left')
                                     elif mouse_type == 'mouseUpLeft':
                                         pyautogui.mouseUp(button='left')
+
                                     elif mouse_type == 'mouseDownRight':
                                         pyautogui.mouseDown(button='right')
                                     elif mouse_type == 'mouseUpRight':
-                                        pyautogui.mouseUp(button='right')                      
+                                        pyautogui.mouseUp(button='right')
+
+                                    elif mouse_type == 'mouseDownMiddle':
+                                        pyautogui.mouseDown(button='middle')
+                                    elif mouse_type == 'mouseUpMiddle':
+                                        pyautogui.mouseUp(button='middle')
 
                                     print(mouse_data)
 
