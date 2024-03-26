@@ -153,6 +153,12 @@ class Viewer(QWidget):
         self.mouse_timer.timeout.connect(self.mouseTimerHandler)
         self.mouse_timer.start()
 
+
+        self.animation_timer = QTimer()
+        self.animation_timer.setInterval(100)
+        self.animation_timer.timeout.connect(self.mouseAnimationTimerHandler)
+
+
         self.myQMenuBar = QMenuBar(self)
 
         exitMenu = self.myQMenuBar.addMenu('Application')
@@ -187,6 +193,24 @@ class Viewer(QWidget):
         'up', 'volumedown', 'volumemute', 'volumeup', 'win', 'winleft', 'winright', 'yen',
         'command', 'option', 'optionleft', 'optionright']
 
+        self.key_translate_error_duration = .4
+        self.key_translate_error_timestamp = time.time() - self.key_translate_error_duration
+
+    def isKeyTranslationErrorVisible(self):
+        if time.time() - self.key_translate_error_timestamp < self.key_translate_error_duration:
+            return True
+        else:
+            return False
+
+    def keyTranslationErrorOpacity(self):
+        value = 1.0 - (time.time() - self.key_translate_error_timestamp)/self.key_translate_error_duration
+        value = min(1.0, value)
+        value = max(0.0, value)
+        return value
+    
+    def triggerKeyTranslationError(self):
+        self.key_translate_error_timestamp = time.time()
+
     def translateQtKeyEventDataToPyautoguiArgumentValue(self, event):
         key = event.key()
         attr_name = self.key_attr_names.get(key)
@@ -220,6 +244,24 @@ class Viewer(QWidget):
                 painter.setOpacity(0.95)
 
             painter.drawImage(viewport_rect, self.image_to_show, image_rect)
+
+        if self.isKeyTranslationErrorVisible():
+            self.animation_timer.start()
+            painter.setOpacity(self.keyTranslationErrorOpacity())
+
+            r = viewport_rect
+            painter.setBrush(Qt.NoBrush)
+            MAX_COUNT = 50
+            for i in range(MAX_COUNT):
+                opacity = 255-int(i/MAX_COUNT*255)
+                color = QColor(230, 50, 50, opacity)
+                painter.setPen(QPen(color))
+                painter.drawRect(r)
+                r = r.adjusted(1, 1, -1, -1)
+            painter.setOpacity(1.0)
+
+        else:
+            self.animation_timer.stop()
 
         font = painter.font()
         font.setPixelSize(20)
@@ -275,6 +317,9 @@ class Viewer(QWidget):
             x, y = self.mapViewportToClient()
             mouse_data_dict = {DataType.MouseData: {'mousePos': [x, y]}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+
+    def mouseAnimationTimerHandler(self):
+        self.update()
 
     def mapViewportToClient(self):
         mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
@@ -336,6 +381,8 @@ class Viewer(QWidget):
             key_data_dict = {DataType.KeyboardData: {data_key: pyautogui_arg}}
             print(key_data_dict)
             self.connection.socket.write(prepare_data_to_write(key_data_dict, None))
+        else:
+            self.triggerKeyTranslationError()
 
     def keyPressEvent(self, event):
         key_name_attr = self.key_attr_names.get(event.key(), None)
