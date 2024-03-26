@@ -219,7 +219,6 @@ class Viewer(QWidget):
             mouse_data_dict = {DataType.MouseData: {data_key: None}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
-
     def mouseReleaseEvent(self, event):
         if self.isViewportReadyAndCursorInsideViewport():
             if event.button() == Qt.LeftButton:
@@ -230,6 +229,12 @@ class Viewer(QWidget):
                 data_key = 'mouseUpMiddle'
             mouse_data_dict = {DataType.MouseData: {data_key: None}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+
+    def wheelEvent(self, event):
+        scroll_value = event.angleDelta().y()/240
+        data_key = 'mouseWheel'        
+        mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
+        self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -394,6 +399,7 @@ class Connection(QObject):
                                     if mouse_type == 'mousePos':
                                         x, y = mouse_value
                                         pyautogui.moveTo(x, y)
+
                                     elif mouse_type == 'mouseDownLeft':
                                         pyautogui.mouseDown(button='left')
                                     elif mouse_type == 'mouseUpLeft':
@@ -408,6 +414,12 @@ class Connection(QObject):
                                         pyautogui.mouseDown(button='middle')
                                     elif mouse_type == 'mouseUpMiddle':
                                         pyautogui.mouseUp(button='middle')
+
+                                    elif mouse_type == 'mouseWheel':
+                                        if mouse_value > 0:
+                                            pyautogui.scroll(1)
+                                        else:
+                                            pyautogui.scroll(-1)
 
                                     print(mouse_data)
 
