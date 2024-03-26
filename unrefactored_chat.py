@@ -172,6 +172,7 @@ class Viewer(QWidget):
             ('Послать Insert', ['insert']),
             ('Послать Print Screen', ['printscreen']),
             ('Послать Alt+PrintScreen', ['alt', 'printscreen']),
+            ('Послать Shift+Tab', ['shift', 'tab']),            
         )
         keyboardMenu = self.menuBar.addMenu('Keyboard')
 
