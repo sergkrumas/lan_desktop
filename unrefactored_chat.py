@@ -211,15 +211,21 @@ class Viewer(QWidget):
     def mousePressEvent(self, event):
         if self.isViewportReadyAndCursorInsideViewport():
             if event.button() == Qt.LeftButton:
-                mouse_data_dict = {DataType.MouseData: {'mouseDownLeft': None}}
-                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+                data_key = 'mouseDownLeft'
+            elif event.button() == Qt.RightButton:
+                data_key = 'mouseDownRight'                
+            mouse_data_dict = {DataType.MouseData: {data_key: None}}
+            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
 
     def mouseReleaseEvent(self, event):
         if self.isViewportReadyAndCursorInsideViewport():
             if event.button() == Qt.LeftButton:
-                mouse_data_dict = {DataType.MouseData: {'mouseUpLeft': None}}
-                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+                data_key = 'mouseUpLeft'
+            elif event.button() == Qt.RightButton:
+                data_key = 'mouseUpRight'
+            mouse_data_dict = {DataType.MouseData: {data_key: None}}
+            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -388,6 +394,10 @@ class Connection(QObject):
                                         pyautogui.mouseDown(button='left')
                                     elif mouse_type == 'mouseUpLeft':
                                         pyautogui.mouseUp(button='left')
+                                    elif mouse_type == 'mouseDownRight':
+                                        pyautogui.mouseDown(button='right')
+                                    elif mouse_type == 'mouseUpRight':
+                                        pyautogui.mouseUp(button='right')                      
 
                                     print(mouse_data)
 
