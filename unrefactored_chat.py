@@ -168,6 +168,7 @@ class Viewer(QWidget):
 
         keyboard_send_actions_data = (
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
+            ('Послать Ctrl+Break', ['ctrl', 'break']),            
         )
         keyboardMenu = self.menuBar.addMenu('Keyboard')
 
