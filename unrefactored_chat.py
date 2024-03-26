@@ -157,9 +157,18 @@ class Viewer(QWidget):
 
         self.myQMenuBar = QMenuBar(self)
         exitMenu = self.myQMenuBar.addMenu('Application')
-        exitAction = QAction('Exit', self)        
+        exitAction = QAction('Exit', self)
         exitAction.triggered.connect(quit_app)
         exitMenu.addAction(exitAction)
+
+        self.key_attr_names = {getattr(Qt, attrname): attrname for attrname in dir(Qt) if attrname.startswith('Key_')}
+
+        self.keys_log = []
+
+    def addToKeysLog(self, status, key_attr_name):
+        self.keys_log.insert(0, (status, key_attr_name))
+        self.keys_log = self.keys_log[:20]
+        self.update()
 
     def paintEvent(self, event):
         painter = QPainter()
@@ -176,6 +185,29 @@ class Viewer(QWidget):
                 painter.setOpacity(0.95)
 
             painter.drawImage(viewport_rect, self.image_to_show, image_rect)
+
+        painter.setPen(Qt.white)
+        font = painter.font()
+        font.setPixelSize(20)
+        painter.setFont(font)
+
+        pos = self.rect().bottomLeft()
+
+        for n, log_entry in enumerate(self.keys_log):
+            status, key_attr_name = log_entry
+            if status == 'down':
+                out = 'Зажата '
+            elif status == 'up':
+                out = 'Отпущена '
+            msg = out + key_attr_name[4:] + f' ({key_attr_name})'
+            r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
+            if n == 0:
+                factor = 0
+            else:
+                factor = 1
+            pos += QPoint(0, factor*-r.height())
+            painter.drawText(pos, msg)
+
         painter.end()
 
     def get_viewport_rect(self):
@@ -210,7 +242,6 @@ class Viewer(QWidget):
         y = int(norm_y*self.image_to_show.height())
         return x, y
 
-
     def isViewportReadyAndCursorInsideViewport(self):
         if self.image_to_show is not None:
             mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
@@ -218,7 +249,6 @@ class Viewer(QWidget):
             if viewport_rect.contains(mapped_cursor_pos):
                 return True
         return False
-
 
     def mouseMoveEvent(self, event):
         self.update()
@@ -252,15 +282,12 @@ class Viewer(QWidget):
         self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def keyPressEvent(self, event):
-
-        print('....................>>>>>>>>>>>>>..........', event.key())
+        key_name_attr = self.key_attr_names.get(event.key(), None)
+        self.addToKeysLog('down', key_name_attr)
 
     def keyReleaseEvent(self, event):
-
-        print('........... !!!!!!!!!!!!!!! ........', event.key())
-
-        # if event.key() == Qt.Key_Escape:
-        #     quit_app()
+        key_name_attr = self.key_attr_names.get(event.key(), None)
+        self.addToKeysLog('up', key_name_attr)
 
 def show_capture_window(image, capture_rect, connection):
 
@@ -275,7 +302,7 @@ def show_capture_window(image, capture_rect, connection):
     viewer.capture_rect = capture_rect
     viewer.connection = connection
     address = connection.socket.peerAddress().toString()
-    title = f'Viewport for {address}'    
+    title = f'Viewport for {address}'
     viewer.setWindowTitle(title)
     viewer.update()
 
