@@ -146,15 +146,6 @@ class Viewer(QWidget):
         self.mouse_timer.timeout.connect(self.mouseTimerHandler)
         self.mouse_timer.start()
 
-        # self.menuBar = menuBar = self.menuBar()
-        # # Creating menus using a QMenu object
-        # fileMenu = QMenu("&File", self)
-        # menuBar.addMenu(fileMenu)
-        # # Creating menus using a title
-        # editMenu = menuBar.addMenu("&Edit")
-        # helpMenu = menuBar.addMenu("&Help")
-
-
         self.myQMenuBar = QMenuBar(self)
         exitMenu = self.myQMenuBar.addMenu('Application')
         exitAction = QAction('Exit', self)
