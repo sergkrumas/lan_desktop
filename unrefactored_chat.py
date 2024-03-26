@@ -191,7 +191,7 @@ class Viewer(QWidget):
         norm_x = viewport_pos.x() / viewport_rect.width()
         norm_y = viewport_pos.y() / viewport_rect.height()
         # print(viewport_pos, norm_x, norm_y)
-        x = int(norm_x*self.image_to_show.width()) 
+        x = int(norm_x*self.image_to_show.width())
         y = int(norm_y*self.image_to_show.height())
         return x, y
 
@@ -213,14 +213,13 @@ class Viewer(QWidget):
             if event.button() == Qt.LeftButton:
                 mouse_data_dict = {DataType.MouseData: {'mouseDownLeft': None}}
                 self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
-                pass
+
 
     def mouseReleaseEvent(self, event):
         if self.isViewportReadyAndCursorInsideViewport():
             if event.button() == Qt.LeftButton:
                 mouse_data_dict = {DataType.MouseData: {'mouseUpLeft': None}}
-                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))                
-                pass
+                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
