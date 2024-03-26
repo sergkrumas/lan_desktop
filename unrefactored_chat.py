@@ -177,12 +177,11 @@ class Viewer(QWidget):
 
             painter.drawImage(viewport_rect, self.image_to_show, image_rect)
 
-        painter.setPen(Qt.white)
         font = painter.font()
         font.setPixelSize(20)
         painter.setFont(font)
 
-        pos = self.rect().bottomLeft()
+        pos = self.rect().bottomLeft() + QPoint(20, -20)
 
         for n, log_entry in enumerate(self.keys_log):
             status, key_attr_name = log_entry
@@ -190,13 +189,24 @@ class Viewer(QWidget):
                 out = 'Зажата '
             elif status == 'up':
                 out = 'Отпущена '
-            msg = out + key_attr_name[4:] + f' ({key_attr_name})'
+            if key_attr_name is not None:
+                msg = out + key_attr_name[4:] + f' ({key_attr_name})'
+            else:
+                msg = out + str(key_attr_name)
             r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
             if n == 0:
                 factor = 0
             else:
                 factor = 1
             pos += QPoint(0, factor*-r.height())
+            r.moveBottomLeft(pos)
+
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(Qt.black))
+            painter.setOpacity(0.8)
+            painter.drawRect(r)
+            painter.setPen(Qt.white)
+            painter.setOpacity(1.0)
             painter.drawText(pos, msg)
 
         painter.end()
