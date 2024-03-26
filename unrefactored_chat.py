@@ -432,7 +432,8 @@ class Connection(QObject):
 
     def deleteLater(self):
         if self.isGreetingMessageSent:
-            self.socket.waitForBytesWritten(2000)
+            if self.socket.isValid():
+                self.socket.waitForBytesWritten(2000)
         super().deleteLater()
 
     class states():
