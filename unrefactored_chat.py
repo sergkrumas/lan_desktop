@@ -154,6 +154,7 @@ class Viewer(QWidget):
         self.mouse_timer.start()
 
         self.myQMenuBar = QMenuBar(self)
+
         exitMenu = self.myQMenuBar.addMenu('Application')
         exitAction = QAction('Exit', self)
         exitAction.triggered.connect(quit_app)
@@ -255,7 +256,11 @@ class Viewer(QWidget):
 
     def get_viewport_rect(self):
         image_rect = self.image_to_show.rect()
-        return fit_rect_into_rect(image_rect, self.rect())
+
+        self_rect = self.rect()
+        self_rect.setTop(self.myQMenuBar.rect().height())
+
+        return fit_rect_into_rect(image_rect, self_rect)
 
     def closeEvent(self, event):
         global viewer
