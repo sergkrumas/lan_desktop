@@ -593,6 +593,8 @@ class Connection(QObject):
                                         pyautogui.keyDown(key_value)
                                     elif event_type == 'keyUp':
                                         pyautogui.keyUp(key_value)
+                                    elif event_type == 'keyHotkey':
+                                        pyautogui.hotkey(key_value)
 
 
 
