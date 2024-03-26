@@ -177,10 +177,22 @@ class Viewer(QWidget):
         # по крайней мере на приложуха в виртуалке Linux захлёбывается
         if self.image_to_show is not None:
             mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
-            x = mapped_cursor_pos.x()
-            y = mapped_cursor_pos.y()
-            mouse_data_dict = {DataType.MouseData: [x, y]}
-            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+            viewport_rect = self.get_viewport_rect()
+            if viewport_rect.contains(mapped_cursor_pos):            
+                x = mapped_cursor_pos.x()
+                y = mapped_cursor_pos.y()
+
+                viewport_pos = mapped_cursor_pos - viewport_rect.topLeft() 
+
+                norm_x = viewport_pos.x() / viewport_rect.width()
+                norm_y = viewport_pos.y() / viewport_rect.height()
+                print(viewport_pos, norm_x, norm_y)
+
+                x = int(norm_x*self.image_to_show.width()) 
+                y = int(norm_y*self.image_to_show.height())
+
+                mouse_data_dict = {DataType.MouseData: [x, y]}
+                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def mouseMoveEvent(self, event):
         self.update()
