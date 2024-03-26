@@ -232,7 +232,7 @@ class Viewer(QWidget):
 
     def wheelEvent(self, event):
         scroll_value = event.angleDelta().y()/240
-        data_key = 'mouseWheel'        
+        data_key = 'mouseWheel'
         mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
         self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
