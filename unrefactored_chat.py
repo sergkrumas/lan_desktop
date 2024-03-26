@@ -163,6 +163,7 @@ class Viewer(QWidget):
         self.key_attr_names = {getattr(Qt, attrname): attrname for attrname in dir(Qt) if attrname.startswith('Key_')}
         self.keys_log = []
 
+        # скопировано из документации
         self.allowed_pyautogui_args = [' ', '!', '"', '#', '$', '%', '&', "'", '(',
         ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`',
