@@ -159,9 +159,9 @@ class Viewer(QWidget):
         self.animation_timer.timeout.connect(self.mouseAnimationTimerHandler)
 
 
-        self.myQMenuBar = QMenuBar(self)
+        self.menuBar = QMenuBar(self)
 
-        exitMenu = self.myQMenuBar.addMenu('Application')
+        exitMenu = self.menuBar.addMenu('Application')
         exitAction = QAction('Exit', self)
         exitAction.triggered.connect(quit_app)
         exitMenu.addAction(exitAction)
@@ -303,7 +303,7 @@ class Viewer(QWidget):
         image_rect = self.image_to_show.rect()
 
         self_rect = self.rect()
-        self_rect.setTop(self.myQMenuBar.rect().height())
+        self_rect.setTop(self.menuBar.rect().height())
 
         return fit_rect_into_rect(image_rect, self_rect)
 
