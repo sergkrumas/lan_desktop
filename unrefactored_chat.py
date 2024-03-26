@@ -170,6 +170,7 @@ class Viewer(QWidget):
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
             ('Послать Ctrl+Break', ['ctrl', 'break']),
             ('Послать Insert', ['insert']),
+            ('Послать Print Screen', ['printscreen']),
         )
         keyboardMenu = self.menuBar.addMenu('Keyboard')
 
