@@ -1332,6 +1332,12 @@ class ChatDialog(QDialog):
         bar = self.textEdit.verticalScrollBar()
         bar.setValue(bar.maximum())
 
+    def appendSystemMessage(self, message):
+        color = self.textEdit.textColor()
+        self.textEdit.setTextColor(Qt.green)
+        self.textEdit.append("! System: %s" % message)
+        self.textEdit.setTextColor(color)
+
     def returnPressed(self):
         text = self.lineEdit.text()
         if not text:
@@ -1340,7 +1346,7 @@ class ChatDialog(QDialog):
         if text.startswith('/'):
             color = self.textEdit.textColor()
             self.textEdit.setTextColor(Qt.red)
-            self.textEdit.append("! Unknown command: %s" % text )
+            self.textEdit.append("! Unknown command: %s" % text)
             self.textEdit.setTextColor(color)
         else:
             self.client.sendMessage(text)
