@@ -1131,7 +1131,7 @@ class ChatDialog(QDialog):
 
 
         def capture_combobox_handler():
-            if self.retrieve_capture_index() == -2:
+            if self.retrieve_capture_index() == -2 and self.remote_control_chb:
                 show_user_defined_capture_widget()
             else:
                 hide_user_defined_capture_widget()
