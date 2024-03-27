@@ -599,7 +599,7 @@ class SendTimer(QTimer):
                 msg = f'Отправляется часть файла {self.filename}' + \
                             f' размером {len(filechunk)} байт' + \
                             f' на адрес {conn.socket.peerAddress().toString()}'
-                chat_dialog.appendMessage('system', msg)
+                chat_dialog.appendSystemMessage(msg)
 
                 conn.socket.write(prepare_data_to_write(serial_data, binary_data))
 
@@ -622,7 +622,7 @@ def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
     filename = file_chunk_info['filename']
     chunk_size = file_chunk_info['chunk_size']
 
-    chat_dialog.appendMessage('system', f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
+    chat_dialog.appendSystemMessage(f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
 
     global recieving_files
     if md5_hash not in recieving_files:
@@ -640,7 +640,7 @@ def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
         recieving_files_objs.pop(md5_hash)
         file_obj.close()
 
-        chat_dialog.appendMessage('system', f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}')
+        chat_dialog.appendSystemMessage(f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}', bold=True)
 
         os.rename(md5_hash, filename)
 
@@ -1332,7 +1332,7 @@ class ChatDialog(QDialog):
         bar = self.textEdit.verticalScrollBar()
         bar.setValue(bar.maximum())
 
-    def appendSystemMessage(self, message):
+    def appendSystemMessage(self, message, bold=False):
         color = self.textEdit.textColor()
         self.textEdit.setTextColor(Qt.green)
         self.textEdit.append("! System: %s" % message)
