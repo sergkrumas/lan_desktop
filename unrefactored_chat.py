@@ -158,6 +158,7 @@ class Viewer(QWidget):
         self.animation_timer.setInterval(100)
         self.animation_timer.timeout.connect(self.mouseAnimationTimerHandler)
 
+        self.show_log_keys = False
 
         self.menuBar = QMenuBar(self)
 
@@ -183,6 +184,17 @@ class Viewer(QWidget):
             action = QAction(text, self)
             action.triggered.connect(partial(send_hotkey, args))
             keyboardMenu.addAction(action)
+
+        def toggle_(obj, attr_name):
+            setattr(obj, attr_name, not getattr(obj, attr_name))
+            self.update()
+
+        viewMenu = self.menuBar.addMenu('View')
+        action = QAction('Show keys log over viewport', self)
+        action.setCheckable(True)
+        action.setChecked(self.show_log_keys)
+        action.triggered.connect(partial(toggle_, self, 'show_log_keys'))
+        viewMenu.addAction(action)
 
         self.key_attr_names = {getattr(Qt, attrname): attrname for attrname in dir(Qt) if attrname.startswith('Key_')}
         self.keys_log = []
@@ -283,37 +295,38 @@ class Viewer(QWidget):
         else:
             self.animation_timer.stop()
 
-        font = painter.font()
-        font.setPixelSize(20)
-        painter.setFont(font)
+        if self.show_log_keys:
+            font = painter.font()
+            font.setPixelSize(20)
+            painter.setFont(font)
 
-        pos = self.rect().bottomLeft() + QPoint(20, -20)
+            pos = self.rect().bottomLeft() + QPoint(20, -20)
 
-        for n, log_entry in enumerate(self.keys_log):
-            status, key_attr_name = log_entry
-            if status == 'down':
-                out = 'Зажата '
-            elif status == 'up':
-                out = 'Отпущена '
-            if key_attr_name is not None:
-                msg = out + key_attr_name[4:] + f' ({key_attr_name})'
-            else:
-                msg = out + str(key_attr_name)
-            r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
-            if n == 0:
-                factor = 0
-            else:
-                factor = 1
-            pos += QPoint(0, factor*-r.height())
-            r.moveBottomLeft(pos)
+            for n, log_entry in enumerate(self.keys_log):
+                status, key_attr_name = log_entry
+                if status == 'down':
+                    out = 'Зажата '
+                elif status == 'up':
+                    out = 'Отпущена '
+                if key_attr_name is not None:
+                    msg = out + key_attr_name[4:] + f' ({key_attr_name})'
+                else:
+                    msg = out + str(key_attr_name)
+                r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
+                if n == 0:
+                    factor = 0
+                else:
+                    factor = 1
+                pos += QPoint(0, factor*-r.height())
+                r.moveBottomLeft(pos)
 
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QBrush(Qt.black))
-            painter.setOpacity(0.8)
-            painter.drawRect(r)
-            painter.setPen(Qt.white)
-            painter.setOpacity(1.0)
-            painter.drawText(pos, msg)
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QBrush(Qt.black))
+                painter.setOpacity(0.8)
+                painter.drawRect(r)
+                painter.setPen(Qt.white)
+                painter.setOpacity(1.0)
+                painter.drawText(pos, msg)
 
         painter.end()
 
