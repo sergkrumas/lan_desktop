@@ -595,6 +595,10 @@ class SendTimer(QTimer):
 
 
             for conn in chat_dialog.client.get_peers_connections():
+                msg = f'Отправляется часть файла {self.filename}' + \
+                            f' размером {len(filechunk)} байт' + \
+                            f' на адрес {conn.socket.peerAddress().toString()}'
+                chat_dialog.appendMessage('system', msg)
 
                 conn.socket.write(prepare_data_to_write(serial_data, binary_data))
 
