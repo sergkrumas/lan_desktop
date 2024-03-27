@@ -671,7 +671,7 @@ class Connection(QObject):
                                         show_screencast_keys_window('up', key_value)
                                     elif event_type == 'keyHotkey':
                                         pyautogui.hotkey(key_value)
-
+                                        show_screencast_keys_window('up', "+".join(key_value))
 
 
                             else:
