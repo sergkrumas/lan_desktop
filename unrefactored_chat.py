@@ -1340,7 +1340,7 @@ class ChatDialog(QDialog):
         if text.startswith('/'):
             color = self.textEdit.textColor()
             self.textEdit.setTextColor(Qt.red)
-            self.textEdit.append("! Unknown command: %s" % text.left(text.indexOf(' ')) )
+            self.textEdit.append("! Unknown command: %s" % text )
             self.textEdit.setTextColor(color)
         else:
             self.client.sendMessage(text)
