@@ -14,6 +14,7 @@ from PyQt5.QtNetwork import *
 import cbor2
 import pyautogui
 
+from _resizable_frameless_modificated import ResizableWidgetWindow
 
 from _utils import (fit_rect_into_rect, )
 
@@ -33,6 +34,7 @@ BROADCASTPORT = 45000
 
 viewer = None
 keys_log_viewer = None
+capture_zone_widget_window = None
 
 INT_SIZE = 4
 TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
@@ -85,6 +87,28 @@ def make_capture_frame(capture_index):
     return qimage, capture_rect
 
 
+def make_user_defined_capture_screenshot(capture_rect):
+    desktop = QDesktopWidget()
+    qimage = QImage(
+        capture_rect.width(),
+        capture_rect.height(),
+        QImage.Format_RGB32
+    )
+    qimage.fill(Qt.black)
+
+    painter = QPainter()
+    painter.begin(qimage)
+    screens = QGuiApplication.screens()
+    for n, screen in enumerate(screens):
+        screen_geometry = screen.geometry()
+        if screen_geometry.intersects(capture_rect):
+            screen_pixmap = screen.grabWindow(0)
+            repos = screen_geometry.topLeft() - capture_rect.topLeft()
+            screen_geometry.moveTopLeft(repos)
+            source_rect = QRect(QPoint(0, 0), screen.geometry().size())
+            painter.drawPixmap(screen_geometry, screen_pixmap, source_rect)
+    painter.end()
+    return qimage
 
 
 
@@ -121,7 +145,12 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
     return data_to_sent
 
 def prepare_screenshot_to_transfer(capture_index):
-    image, capture_rect = make_capture_frame(capture_index)
+
+    if capture_index == -2:
+        capture_rect = capture_zone_widget_window.geometry()
+        image = make_user_defined_capture_screenshot(capture_rect)
+    else:
+        image, capture_rect = make_capture_frame(capture_index)
 
     byte_array = QByteArray()
     buffer = QBuffer(byte_array)
@@ -132,6 +161,19 @@ def prepare_screenshot_to_transfer(capture_index):
 
     return prepare_data_to_write(capture_rect_tuple, byte_array.data())
 
+
+def show_user_defined_capture_widget():
+    global capture_zone_widget_window
+    if capture_zone_widget_window is None:
+        capture_zone_widget_window = ResizableWidgetWindow()
+        capture_zone_widget_window.show()
+        capture_zone_widget_window.resize(240, 160)
+    capture_zone_widget_window.show()
+
+def hide_user_defined_capture_widget():
+    global capture_zone_widget_window
+    if capture_zone_widget_window is not None:
+        capture_zone_widget_window.hide()
 
 
 def quit_app():
@@ -213,6 +255,8 @@ def show_screencast_keys_window(status, key_name):
 
     keys_log_viewer.addToKeysLog(status, key_name)
     keys_log_viewer.update()
+
+
 
 
 
@@ -1078,13 +1122,21 @@ class ChatDialog(QDialog):
         self.capture_combobox = QComboBox()
 
         desktop = QDesktopWidget()
-        self.capture_combobox.addItem('Произвольная область', -2)        
+        self.capture_combobox.addItem('Произвольная область', -2)
         self.capture_combobox.addItem('Все', -1)
         for i in range(0, desktop.screenCount()):
             self.capture_combobox.addItem(f'Монитор {i+1}', i)
         # по дефолту выдаём содержимое первого монитора
         self.capture_combobox.setCurrentIndex(1)
 
+
+        def capture_combobox_handler():
+            if self.retrieve_capture_index() == -2:
+                show_user_defined_capture_widget()
+            else:
+                hide_user_defined_capture_widget()
+
+        self.capture_combobox.currentIndexChanged.connect(capture_combobox_handler)
 
         hor_layout.addWidget(self.capture_combobox)
         main_layout.addLayout(hor_layout)
