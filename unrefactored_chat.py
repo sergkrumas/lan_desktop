@@ -382,24 +382,26 @@ class Viewer(QWidget):
 
     def mousePressEvent(self, event):
         if self.isViewportReadyAndCursorInsideViewport():
+            data_key = 'mouseDown'
             if event.button() == Qt.LeftButton:
-                data_key = 'mouseDownLeft'
+                mouse_button = 'left'
             elif event.button() == Qt.RightButton:
-                data_key = 'mouseDownRight'
+                mouse_button = 'right'
             elif event.button() == Qt.MiddleButton:
-                data_key = 'mouseDownMiddle'
-            mouse_data_dict = {DataType.MouseData: {data_key: None}}
+                mouse_button = 'middle'
+            mouse_data_dict = {DataType.MouseData: {data_key: mouse_button}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def mouseReleaseEvent(self, event):
         if self.isViewportReadyAndCursorInsideViewport():
+            data_key = 'mouseUp'
             if event.button() == Qt.LeftButton:
-                data_key = 'mouseUpLeft'
+                mouse_button = 'left'
             elif event.button() == Qt.RightButton:
-                data_key = 'mouseUpRight'
+                mouse_button = 'right'
             elif event.button() == Qt.MiddleButton:
-                data_key = 'mouseUpMiddle'
-            mouse_data_dict = {DataType.MouseData: {data_key: None}}
+                mouse_button = 'middle'
+            mouse_data_dict = {DataType.MouseData: {data_key: mouse_button}}
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def wheelEvent(self, event):
@@ -587,24 +589,15 @@ class Connection(QObject):
                                     mouse_type = item[0]
                                     mouse_value = item[1]
 
+                                    mouse_button = mouse_value
                                     if mouse_type == 'mousePos':
                                         x, y = mouse_value
                                         pyautogui.moveTo(x, y)
 
-                                    elif mouse_type == 'mouseDownLeft':
-                                        pyautogui.mouseDown(button='left')
-                                    elif mouse_type == 'mouseUpLeft':
-                                        pyautogui.mouseUp(button='left')
-
-                                    elif mouse_type == 'mouseDownRight':
-                                        pyautogui.mouseDown(button='right')
-                                    elif mouse_type == 'mouseUpRight':
-                                        pyautogui.mouseUp(button='right')
-
-                                    elif mouse_type == 'mouseDownMiddle':
-                                        pyautogui.mouseDown(button='middle')
-                                    elif mouse_type == 'mouseUpMiddle':
-                                        pyautogui.mouseUp(button='middle')
+                                    elif mouse_type == 'mouseDown':
+                                        pyautogui.mouseDown(button=mouse_button)
+                                    elif mouse_type == 'mouseUp':
+                                        pyautogui.mouseUp(button=mouse_button)
 
                                     elif mouse_type == 'mouseWheel':
                                         if mouse_value > 0:
