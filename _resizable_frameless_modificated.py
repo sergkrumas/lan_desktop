@@ -23,6 +23,9 @@ class ResizableWidgetWindow(ResizableFramelessWindow):
     def __init__(self):
         super().__init__(CustomSizeGrip)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        # задаю минимальный размер, чтобы пользователь нечаянно не занулил размеры
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.setMinimumSize(100, 100)
 
     def paintEvent(self, event):
         painter = QPainter()
