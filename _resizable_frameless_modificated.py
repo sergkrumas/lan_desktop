@@ -17,7 +17,6 @@ class CustomSizeGrip(QSizeGrip):
         painter.drawRect(r)
         painter.end()
 
-
 class ResizableWidgetWindow(ResizableFramelessWindow):
 
     def __init__(self):
@@ -54,7 +53,6 @@ class ResizableWidgetWindow(ResizableFramelessWindow):
         painter.end()
 
     def mousePressEvent(self, event):
-
         center_rect = self.getCenterRect()
         if center_rect.contains(event.pos()):
             self.translating_ongoing = True 
