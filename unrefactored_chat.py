@@ -2,9 +2,12 @@
 
 
 import sys
+import os
 import time
 import platform
 from functools import partial
+import hashlib
+from collections import defaultdict
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
