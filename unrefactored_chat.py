@@ -639,6 +639,8 @@ def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
         recieving_files_objs.pop(md5_hash)
         file_obj.close()
 
+        chat_dialog.appendMessage('system', f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}')
+
         os.rename(md5_hash, filename)
 
 
