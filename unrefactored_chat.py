@@ -1333,10 +1333,19 @@ class ChatDialog(QDialog):
         bar.setValue(bar.maximum())
 
     def appendSystemMessage(self, message, bold=False):
+        if bold:
+            old_font = self.textEdit.currentFont()
+            font = self.textEdit.currentFont()
+            font.setWeight(2300)
+            self.textEdit.setCurrentFont(font)
+
         color = self.textEdit.textColor()
         self.textEdit.setTextColor(Qt.green)
         self.textEdit.append("! System: %s" % message)
         self.textEdit.setTextColor(color)
+
+        if bold:
+            self.textEdit.setCurrentFont(old_font)
 
     def returnPressed(self):
         text = self.lineEdit.text()
