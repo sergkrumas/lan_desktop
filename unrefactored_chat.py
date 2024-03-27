@@ -1222,15 +1222,22 @@ class ChatDialog(QDialog):
         self.listWidget.setMaximumSize(400, 2000)
         self.listWidget.setFocusPolicy(Qt.NoFocus)
 
-        self.remote_control_chb = QCheckBox('Allow Remote Control')
-
         hor_layout = QHBoxLayout()
+
+        self.remote_control_chb = QCheckBox('Allow Remote Control')
         hor_layout.addWidget(self.remote_control_chb)
+
+        self.show_log_keys_chb = QCheckBox('Show keys log')
+        hor_layout.addWidget(self.show_log_keys_chb)
 
         self.capture_combobox = QComboBox()
 
+        nameLb  = QLabel("Захват:", self)
         desktop = QDesktopWidget()
         self.capture_combobox.addItem('Произвольная область', -2)
+        hor_layout.addWidget(nameLb)
+        nameLb.setBuddy(self.capture_combobox)
+
         self.capture_combobox.addItem('Все мониторы', -1)
         for i in range(0, desktop.screenCount()):
             self.capture_combobox.addItem(f'Монитор {i+1}', i)
@@ -1246,7 +1253,7 @@ class ChatDialog(QDialog):
 
         self.capture_combobox.currentIndexChanged.connect(capture_combobox_handler)
 
-        hor_layout.addWidget(self.capture_combobox)
+        hor_layout.addWidget(self.capture_combobox, Qt.AlignLeft)
         main_layout.addLayout(hor_layout)
 
         if platform.system() == 'Linux':
