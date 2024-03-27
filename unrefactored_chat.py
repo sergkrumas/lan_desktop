@@ -607,11 +607,36 @@ def send_files(paths):
     for path in paths:
         SendTimer(path)
 
+recieving_files = defaultdict(int)
+recieving_files_objs = defaultdict(None)
 
-    print('!!!!!!!!!!!!!!!!! ', paths)
+def write_file_chunk_data(file_chunk_info, binary_data):
+
+    md5_hash = file_chunk_info['md5_hash']
+    total_size = file_chunk_info['total_size']
+    filename = file_chunk_info['filename']
+    chunk_size = file_chunk_info['chunk_size']
 
 
-    # clients_connections
+    global recieving_files
+    if md5_hash not in recieving_files:
+        recieving_files_objs[md5_hash] = open(md5_hash, 'wb')
+
+    file_obj = recieving_files_objs[md5_hash]
+
+    recieving_files[md5_hash] += chunk_size
+
+    file_obj.write(binary_data)
+
+    if recieving_files[md5_hash] >= total_size:
+        time.sleep(1)
+        recieving_files.pop(md5_hash)
+        recieving_files_objs.pop(md5_hash)
+        file_obj.close()
+
+        os.rename(md5_hash, filename)
+
+
 
 
 class Connection(QObject):
@@ -710,6 +735,7 @@ class Connection(QObject):
                     try:
 
                         capture_rect_coords = None
+                        file_chunk_info = None
 
                         if cbor2_data:
                             parsed_data = cbor2.loads(cbor2_data)
@@ -782,6 +808,9 @@ class Connection(QObject):
                                         pyautogui.hotkey(key_value)
                                         show_screencast_keys_window('up', "+".join(key_value))
 
+                                elif self.currentDataType == DataType.FileData:
+                                    file_chunk_info = value
+
                                 else:
                                     self.newMessage.emit('System', 'пришла какая-то непонятная хуйня')                                
 
@@ -791,12 +820,17 @@ class Connection(QObject):
 
                         if binary_data:
 
-                            input_byte_array = QByteArray(binary_data)
-                            capture_image = QImage()
-                            capture_image.loadFromData(input_byte_array, "jpg");
-                            print(f'recieved image, {len(binary_data)}, {capture_image.size()}')
+                            if capture_rect_coords:
+                                input_byte_array = QByteArray(binary_data)
+                                capture_image = QImage()
+                                capture_image.loadFromData(input_byte_array, "jpg");
+                                print(f'recieved image, {len(binary_data)}, {capture_image.size()}')
 
-                            show_capture_window(capture_image, QRect(*capture_rect_coords), self)
+                                show_capture_window(capture_image, QRect(*capture_rect_coords), self)
+
+                            elif file_chunk_info:
+                                write_file_chunk_data(file_chunk_info, binary_data)
+
 
                     except Exception as e:
                         raise
