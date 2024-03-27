@@ -614,13 +614,14 @@ def send_files(paths):
 recieving_files = defaultdict(int)
 recieving_files_objs = defaultdict(None)
 
-def write_file_chunk_data(file_chunk_info, binary_data):
+def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
 
     md5_hash = file_chunk_info['md5_hash']
     total_size = file_chunk_info['total_size']
     filename = file_chunk_info['filename']
     chunk_size = file_chunk_info['chunk_size']
 
+    chat_dialog.appendMessage('system', f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
 
     global recieving_files
     if md5_hash not in recieving_files:
@@ -833,7 +834,7 @@ class Connection(QObject):
                                 show_capture_window(capture_image, QRect(*capture_rect_coords), self)
 
                             elif file_chunk_info:
-                                write_file_chunk_data(file_chunk_info, binary_data)
+                                write_file_chunk_data(file_chunk_info, binary_data, self.socket.peerAddress().toString())
 
 
                     except Exception as e:
