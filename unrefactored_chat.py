@@ -34,6 +34,7 @@ BROADCASTPORT = 45000
 
 
 viewer = None
+keys_log_viewer = None
 
 INT_SIZE = 4
 TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
@@ -141,12 +142,79 @@ def quit_app():
 
 
 
+def draw_key_log(self, painter):
+    font = painter.font()
+    font.setPixelSize(20)
+    painter.setFont(font)
+
+    pos = self.rect().bottomLeft() + QPoint(20, -20)
+
+    for n, log_entry in enumerate(self.keys_log):
+        status, key_value = log_entry
+        if status == 'down':
+            out = 'Зажата '
+        elif status == 'up':
+            out = 'Отпущена '
+        if key_value is not None:
+            if key_value.startswith('Key_'):
+                key_name = key_value[4:]
+            else:
+                key_name = key_value
+
+            msg = out + key_name + f' ({key_value})'
+        else:
+            msg = out + str(key_value)
+        r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
+        if n == 0:
+            factor = 0
+        else:
+            factor = 1
+        pos += QPoint(0, factor*-r.height())
+        r.moveBottomLeft(pos)
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(Qt.black))
+        painter.setOpacity(0.8)
+        painter.drawRect(r)
+        painter.setPen(Qt.white)
+        painter.setOpacity(1.0)
+        painter.drawText(pos, msg)
 
 class TransparentWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.setWindowFlag(QtFramelessWindowHint)
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.keys_log = []
+
+    def paintEvent(self, event):
+        painter = QPainter()
+        painter.begin(self)
+        painter.fillRect(self.rect(), Qt.black)
+        draw_key_log(self, painter)
+        painter.end()
+
+    def addToKeysLog(self, status, key_attr_name):
+        self.keys_log.insert(0, (status, key_attr_name))
+        self.keys_log = self.keys_log[:20]
+        self.update()
+
+def show_screencast_keys_window(status, key_name):
+
+    global keys_log_viewer
+    if keys_log_viewer is None:
+        keys_log_viewer = TransparentWidget()
+        keys_log_viewer.resize(400, 800)
+        keys_log_viewer.show()
+        rect = keys_log_viewer.geometry()
+        desktop_widget = QDesktopWidget()
+        # кладём окно аккурат над кнопкой «Пуск»
+        rect.moveBottomLeft(desktop_widget.availableGeometry().bottomLeft())
+        keys_log_viewer.setGeometry(rect)
+
+    keys_log_viewer.addToKeysLog(status, key_name)
+    keys_log_viewer.update()
+
 
 
 
@@ -305,37 +373,9 @@ class Viewer(QWidget):
             self.animation_timer.stop()
 
         if self.show_log_keys:
-            font = painter.font()
-            font.setPixelSize(20)
-            painter.setFont(font)
 
-            pos = self.rect().bottomLeft() + QPoint(20, -20)
+            draw_key_log(self, painter)
 
-            for n, log_entry in enumerate(self.keys_log):
-                status, key_attr_name = log_entry
-                if status == 'down':
-                    out = 'Зажата '
-                elif status == 'up':
-                    out = 'Отпущена '
-                if key_attr_name is not None:
-                    msg = out + key_attr_name[4:] + f' ({key_attr_name})'
-                else:
-                    msg = out + str(key_attr_name)
-                r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
-                if n == 0:
-                    factor = 0
-                else:
-                    factor = 1
-                pos += QPoint(0, factor*-r.height())
-                r.moveBottomLeft(pos)
-
-                painter.setPen(Qt.NoPen)
-                painter.setBrush(QBrush(Qt.black))
-                painter.setOpacity(0.8)
-                painter.drawRect(r)
-                painter.setPen(Qt.white)
-                painter.setOpacity(1.0)
-                painter.drawText(pos, msg)
 
         painter.end()
 
