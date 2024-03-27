@@ -70,10 +70,10 @@ class ResizableFramelessWindow(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
 
         self.sideGrips = [
-            SideGrip(self, QtCore.Qt.LeftEdge), 
-            SideGrip(self, QtCore.Qt.TopEdge), 
-            SideGrip(self, QtCore.Qt.RightEdge), 
-            SideGrip(self, QtCore.Qt.BottomEdge), 
+            SideGrip(self, QtCore.Qt.LeftEdge),
+            SideGrip(self, QtCore.Qt.TopEdge),
+            SideGrip(self, QtCore.Qt.RightEdge),
+            SideGrip(self, QtCore.Qt.BottomEdge),
         ]
         # corner grips should be "on top" of everything, otherwise the side grips
         # will take precedence on mouse events, so we are adding them *after*;
@@ -119,11 +119,11 @@ class ResizableFramelessWindow(QtWidgets.QWidget):
             inRect.left(), 0, inRect.width(), self.gripSize)
         # right edge
         self.sideGrips[2].setGeometry(
-            inRect.left() + inRect.width(), 
+            inRect.left() + inRect.width(),
             inRect.top(), self.gripSize, inRect.height())
         # bottom edge
         self.sideGrips[3].setGeometry(
-            self.gripSize, inRect.top() + inRect.height(), 
+            self.gripSize, inRect.top() + inRect.height(),
             inRect.width(), self.gripSize)
 
     def resizeEvent(self, event):
