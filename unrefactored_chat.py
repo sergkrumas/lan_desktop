@@ -551,6 +551,7 @@ class DataType:
     Undefined = 4
     MouseData = 5
     KeyboardData = 6
+    FileData = 7
 
 def send_files(paths):
 
