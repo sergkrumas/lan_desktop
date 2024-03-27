@@ -185,12 +185,13 @@ class TransparentWidget(QWidget):
         super().__init__()
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
         self.keys_log = []
 
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
-        painter.fillRect(self.rect(), Qt.black)
+        painter.fillRect(self.rect(), QColor(50, 50, 50, 200))
         draw_key_log(self, painter)
         painter.end()
 
