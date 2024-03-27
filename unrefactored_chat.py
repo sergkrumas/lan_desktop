@@ -175,13 +175,10 @@ class Viewer(QWidget):
             ('Послать Shift+Tab', ['shift', 'tab']),            
         )
         keyboardMenu = self.menuBar.addMenu('Keyboard')
-
-
         def send_hotkey(hotkey_list):
             data_key = 'keyHotkey'
             key_data_dict = {DataType.KeyboardData: {data_key: hotkey_list}}
             self.connection.socket.write(prepare_data_to_write(key_data_dict, None))
-
         for text, args in keyboard_send_actions_data:
             action = QAction(text, self)
             action.triggered.connect(partial(send_hotkey, args))
