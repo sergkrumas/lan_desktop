@@ -3,7 +3,7 @@
 
 
 # copied from https://stackoverflow.com/questions/62807295/how-to-resize-a-window-from-the-edges-after-adding-the-property-qtcore-qt-framel
-
+import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class SideGrip(QtWidgets.QWidget):
@@ -133,8 +133,8 @@ class ResizableFramelessWindow(QtWidgets.QWidget):
 
 if __name__ == '__main__':
 
-    app = QtWidgets.QApplication([])
+    app = QtWidgets.QApplication(sys.argv)
     m = ResizableFramelessWindow(QtWidgets.QSizeGrip)
     m.show()
     m.resize(240, 160)
-    app.exec_()
+    app.exec()
