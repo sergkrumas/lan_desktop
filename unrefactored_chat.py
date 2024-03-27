@@ -321,6 +321,8 @@ class Viewer(QWidget):
     def translateQtKeyEventDataToPyautoguiArgumentValue(self, event):
         key = event.key()
         attr_name = self.key_attr_names.get(key)
+        if attr_name is None:
+            return None
         attr_name = attr_name[4:]
         attr_name = attr_name.lower()
 
