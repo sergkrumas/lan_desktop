@@ -812,7 +812,7 @@ class Connection(QObject):
                                     file_chunk_info = value
 
                                 else:
-                                    self.newMessage.emit('System', 'пришла какая-то непонятная хуйня')                                
+                                    self.newMessage.emit('System', 'пришла какая-то непонятная хуйня')
 
                             else:
                                 print(parsed_data)
