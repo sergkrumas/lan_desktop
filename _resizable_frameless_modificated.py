@@ -4,7 +4,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtNetwork import *
 
-
+import os
 from _resizable_frameless import ResizableFramelessWindow
 
 class CustomSizeGrip(QSizeGrip):
@@ -27,6 +27,10 @@ class ResizableWidgetWindow(ResizableFramelessWindow):
         self.setMinimumSize(100, 100)
         self.translating_ongoing = False
         self.center_rect = QRect(0, 0, 50, 50)
+        folder_path = os.path.dirname(__file__)
+        filepath_translate_svg = os.path.join(folder_path, "resources", "translate.svg")
+        self.translate_rastr_source = QPixmap(filepath_translate_svg).scaledToWidth(40, Qt.SmoothTransformation)
+        self.setCursor(Qt.SizeAllCursor)
 
     def getCenterRect(self):
         r = QRect(self.center_rect)
@@ -36,6 +40,9 @@ class ResizableWidgetWindow(ResizableFramelessWindow):
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
         width_size = 5
         pen = QPen(QColor(200, 50, 50, 50), width_size)
         pen.setStyle(Qt.DashLine)
@@ -45,10 +52,24 @@ class ResizableWidgetWindow(ResizableFramelessWindow):
         r.adjust(width_size-1, width_size-1, -width_size, -width_size)
         painter.drawRect(r)
 
-        r = self.getCenterRect()
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(240, 240, 240, 200))
-        painter.drawRect(r)
+        if self.translate_rastr_source.isNull():
+            r = self.getCenterRect()
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(240, 240, 240, 200))
+            painter.drawRect(r)
+        else:
+            factor = 1.0
+            s = QRect(self.translate_rastr_source.rect())
+            r1 = QRect(0, 0, int(s.width()*factor), int(s.height()*factor))
+            r1.moveCenter(self.rect().center())
+            factor = 0.8
+            r2 = QRect(0, 0, int(s.width()*factor), int(s.height()*factor))
+            r2.moveCenter(self.rect().center())
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(255, 255, 255, 10))
+            painter.drawEllipse(r2)
+            painter.setOpacity(0.5)
+            painter.drawPixmap(r1, self.translate_rastr_source, s)
 
         painter.end()
 
