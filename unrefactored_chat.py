@@ -93,7 +93,7 @@ def make_capture_frame(capture_index):
 
 def prepare_data_to_write(serial_data, binary_attachment_data):
 
-    
+
     if serial_data:
         debug_string = str(serial_data)
 
