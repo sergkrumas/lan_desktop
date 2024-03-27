@@ -648,6 +648,7 @@ class Connection(QObject):
                                         pyautogui.mouseDown(button=mouse_button)
                                     elif mouse_type == 'mouseUp':
                                         pyautogui.mouseUp(button=mouse_button)
+                                        show_screencast_keys_window('up', mouse_button)
 
                                     elif mouse_type == 'mouseWheel':
                                         if mouse_value > 0:
