@@ -635,14 +635,23 @@ def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
     file_obj.write(binary_data)
 
     if recieving_files[md5_hash] >= total_size:
-        time.sleep(1)
         recieving_files.pop(md5_hash)
         recieving_files_objs.pop(md5_hash)
         file_obj.close()
 
+        rename_success = False
+        # Linux на виртуалке не успевает к этому времени закончить операции с файлом
+        # и приходится пробовать несколько раз
+        while not rename_success:
+            try:
+                os.rename(md5_hash, filename)
+                rename_success = True
+            except:
+                pass
+            time.sleep(1)
+
         chat_dialog.appendSystemMessage(f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}', bold=True)
 
-        os.rename(md5_hash, filename)
 
 
 
