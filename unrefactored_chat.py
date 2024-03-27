@@ -464,7 +464,7 @@ class Viewer(QWidget):
         return x, y
 
     def isViewportReadyAndCursorInsideViewport(self):
-        if self.image_to_show is not None:
+        if self.image_to_show is not None and self.isActiveWindow():
             mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
             viewport_rect = self.get_viewport_rect()
             if viewport_rect.contains(mapped_cursor_pos):
