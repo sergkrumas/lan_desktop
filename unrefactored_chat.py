@@ -4,20 +4,18 @@
 import sys
 import time
 import platform
+from functools import partial
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtNetwork import *
 
-from PyQt5 import uic
-
 import cbor2
 import pyautogui
 
 
 from _utils import (fit_rect_into_rect, )
-from functools import partial
 
 
 MaxBufferSize = 1024000
@@ -1051,8 +1049,6 @@ class ChatDialog(QDialog):
 
         self.myNickName = ''
         self.tableFormat = QTextTableFormat()
-
-        # uic.loadUi('chatdialog.ui', self) # Load the .ui file
 
 
         self.setGeometry(0, 0, 1000, 349)
