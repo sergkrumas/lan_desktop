@@ -725,6 +725,8 @@ class Connection(QObject):
                                         pyautogui.hotkey(key_value)
                                         show_screencast_keys_window('up', "+".join(key_value))
 
+                                else:
+                                    self.newMessage.emit('System', 'пришла какая-то непонятная хуйня')                                
 
                             else:
                                 print(parsed_data)
