@@ -59,14 +59,15 @@ class SideGrip(QtWidgets.QWidget):
     def mouseReleaseEvent(self, event):
         self.mousePos = None
 
-
 class ResizableFramelessWindow(QtWidgets.QWidget):
     _gripSize = 8
-    def __init__(self):
+    def __init__(self, size_grip_class):
         super().__init__()
+        self.size_grip_class = size_grip_class
+        self.init_core()
 
+    def init_core(self):
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
         self.sideGrips = [
             SideGrip(self, QtCore.Qt.LeftEdge), 
@@ -77,7 +78,7 @@ class ResizableFramelessWindow(QtWidgets.QWidget):
         # corner grips should be "on top" of everything, otherwise the side grips
         # will take precedence on mouse events, so we are adding them *after*;
         # alternatively, widget.raise_() can be used
-        self.cornerGrips = [QtWidgets.QSizeGrip(self) for i in range(4)]
+        self.cornerGrips = [self.size_grip_class(self) for i in range(4)]
 
     @property
     def gripSize(self):
@@ -133,7 +134,7 @@ class ResizableFramelessWindow(QtWidgets.QWidget):
 if __name__ == '__main__':
 
     app = QtWidgets.QApplication([])
-    m = ResizableFramelessWindow()
+    m = ResizableFramelessWindow(QtWidgets.QSizeGrip)
     m.show()
     m.resize(240, 160)
     app.exec_()
