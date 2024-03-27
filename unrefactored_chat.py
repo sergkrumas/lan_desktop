@@ -653,8 +653,10 @@ class Connection(QObject):
                                     elif mouse_type == 'mouseWheel':
                                         if mouse_value > 0:
                                             pyautogui.scroll(1)
+                                            show_screencast_keys_window('up', "wheel up")
                                         else:
                                             pyautogui.scroll(-1)
+                                            show_screencast_keys_window('up', "wheel down")
 
                                     print(mouse_data)
 
