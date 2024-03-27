@@ -549,7 +549,12 @@ class DataType:
     MouseData = 5
     KeyboardData = 6
 
+def send_files(paths):
 
+    print('!!!!!!!!!!!!!!!!! ', paths)
+
+
+    # clients_connections
 
 
 class Connection(QObject):
@@ -1166,8 +1171,7 @@ class ChatDialog(QDialog):
         layout_h2.addWidget(self.label)
         layout_h2.addWidget(self.lineEdit)
 
-
-
+        self.setAcceptDrops(True)
 
         self.lineEdit.setFocusPolicy(Qt.StrongFocus)
         self.textEdit.setFocusPolicy(Qt.NoFocus)
@@ -1257,6 +1261,33 @@ class ChatDialog(QDialog):
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
             quit_app()
+
+    def dragEnterEvent(self, event):
+        mime_data = event.mimeData()
+        if mime_data.hasUrls() or mime_data.hasImage():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        mime_data = event.mimeData()
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+            paths = []
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    path = str(url.toLocalFile())
+                    paths.append(path)
+                else:
+                    pass
+
+            send_files(paths)
+
+            self.update()
+        else:
+            event.ignore()
+
 
 
 def main():
