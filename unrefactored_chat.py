@@ -245,19 +245,20 @@ class TransparentWidget(QWidget):
 
 def show_screencast_keys_window(status, key_name):
 
-    global keys_log_viewer
-    if keys_log_viewer is None:
-        keys_log_viewer = TransparentWidget()
-        keys_log_viewer.resize(400, 800)
-        keys_log_viewer.show()
-        rect = keys_log_viewer.geometry()
-        desktop_widget = QDesktopWidget()
-        # кладём окно аккурат над кнопкой «Пуск»
-        rect.moveBottomLeft(desktop_widget.availableGeometry().bottomLeft())
-        keys_log_viewer.setGeometry(rect)
+    if chat_dialog.show_log_keys_chb.isChecked():
+        global keys_log_viewer
+        if keys_log_viewer is None:
+            keys_log_viewer = TransparentWidget()
+            keys_log_viewer.resize(400, 800)
+            keys_log_viewer.show()
+            rect = keys_log_viewer.geometry()
+            desktop_widget = QDesktopWidget()
+            # кладём окно аккурат над кнопкой «Пуск»
+            rect.moveBottomLeft(desktop_widget.availableGeometry().bottomLeft())
+            keys_log_viewer.setGeometry(rect)
 
-    keys_log_viewer.addToKeysLog(status, key_name)
-    keys_log_viewer.update()
+        keys_log_viewer.addToKeysLog(status, key_name)
+        keys_log_viewer.update()
 
 
 
@@ -1202,6 +1203,7 @@ class ChatDialog(QDialog):
         self.myNickName = ''
         self.tableFormat = QTextTableFormat()
 
+        self.show_log_keys = False
 
         self.setGeometry(0, 0, 1000, 349)
         self.setWindowTitle('Chat')
@@ -1229,6 +1231,16 @@ class ChatDialog(QDialog):
 
         self.show_log_keys_chb = QCheckBox('Show keys log')
         hor_layout.addWidget(self.show_log_keys_chb)
+        def trigger_show_log_keys_chb():
+            self.show_log_keys = not self.show_log_keys
+            if not self.show_log_keys:
+                global keys_log_viewer
+                if keys_log_viewer is not None:
+                    keys_log_viewer.hide()
+
+        self.show_log_keys_chb.setChecked(self.show_log_keys)
+        self.show_log_keys_chb.stateChanged.connect(trigger_show_log_keys_chb)
+
 
         self.capture_combobox = QComboBox()
 
