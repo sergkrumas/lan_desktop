@@ -55,7 +55,7 @@ class ResizableWidgetWindow(ResizableFramelessWindow):
     def mousePressEvent(self, event):
         center_rect = self.getCenterRect()
         if center_rect.contains(event.pos()):
-            self.translating_ongoing = True 
+            self.translating_ongoing = True
             self.start_pos = QCursor().pos()
             self.start_topleft = self.geometry().topLeft()
         else:
