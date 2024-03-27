@@ -37,7 +37,7 @@ viewer = None
 
 INT_SIZE = 4
 TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
-
+DEBUG_STRING_SIZE = 50
 
 def make_capture_frame(capture_index):
     desktop = QDesktopWidget()
@@ -91,6 +91,15 @@ def make_capture_frame(capture_index):
 
 
 def prepare_data_to_write(serial_data, binary_attachment_data):
+
+    
+    if serial_data:
+        debug_string = str(serial_data)
+
+    debug_string += "*"*(DEBUG_STRING_SIZE-len(debug_string))
+    debug_string = debug_string[:DEBUG_STRING_SIZE]
+    debug_string = debug_string.encode('utf8')
+
     if serial_data is not None:
         serial_binary = cbor2.dumps(serial_data)
         serial_length = len(serial_binary)
@@ -106,7 +115,7 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
         bin_length = 0
     total_data_length = serial_length + bin_length
     header = total_data_length.to_bytes(INT_SIZE, 'big') + serial_length.to_bytes(INT_SIZE, 'big') + bin_length.to_bytes(INT_SIZE, 'big')
-    data_to_sent = header + serial_binary + bin_binary
+    data_to_sent = debug_string + header + serial_binary + bin_binary
 
     # print('prepare_data_to_write', serial_data)
 
@@ -529,11 +538,12 @@ class Connection(QObject):
         if True:
             if self.readState == self.states.readSize:
                 if len(self.socket_buffer) >= TCP_MESSAGE_HEADER_SIZE:
+                    self.debug_string = retrieve_data(DEBUG_STRING_SIZE)
                     self.content_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                     self.cbor2_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                     self.binary_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                     self.readState = self.states.readData
-                    print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer))
+                    print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer), self.debug_string)
                     # print('size read', self.content_data_size)
                 else:
                     pass
@@ -631,7 +641,7 @@ class Connection(QObject):
                             input_byte_array = QByteArray(binary_data)
                             capture_image = QImage()
                             capture_image.loadFromData(input_byte_array, "jpg");
-                            print(f'recieved image, {capture_image.size()}')
+                            print(f'recieved image, {len(binary_data)}, {capture_image.size()}')
 
                             show_capture_window(capture_image, QRect(*capture_rect_coords), self)
 
