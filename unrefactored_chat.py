@@ -553,7 +553,60 @@ class DataType:
     KeyboardData = 6
     FileData = 7
 
+
+send_timers = []
+
+class SendTimer(QTimer):
+    def __init__(self, filepath):
+        super().__init__()
+        send_timers.append(self)
+        self.CHUNK_SIZE = 200000
+        self.fileobj = open(filepath, 'rb')
+        self.fileobj.seek(0, 2) # move the cursor to the end of the file
+        self.filesize = self.fileobj.tell()
+        self.fileobj.seek(0, 0)
+        self.filename = os.path.basename(filepath)
+        self.setInterval(200)
+        self.md5_hash = self.generate_md5(filepath)
+        self.timeout.connect(self.sendFileChunk)
+        self.start()
+
+    @staticmethod
+    def generate_md5(filepath):
+        hash_md5 = hashlib.md5()
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        md5_str = hash_md5.hexdigest()
+        return md5_str
+
+    def sendFileChunk(self):
+        filechunk = self.fileobj.read(self.CHUNK_SIZE)
+
+        if filechunk:
+            chunk_info = {
+                'md5_hash': self.md5_hash,
+                'total_size': self.filesize,
+                'filename': self.filename,
+                'chunk_size': len(filechunk),
+            }
+            serial_data = {DataType.FileData: chunk_info}
+            binary_data = filechunk
+
+
+            for conn in chat_dialog.client.get_peers_connections():
+
+                conn.socket.write(prepare_data_to_write(serial_data, binary_data))
+
+        else:
+            self.stop()
+            if self in send_timers:
+                send_timers.remove(self)
+
 def send_files(paths):
+    for path in paths:
+        SendTimer(path)
+
 
     print('!!!!!!!!!!!!!!!!! ', paths)
 
@@ -831,6 +884,9 @@ class Client(QObject):
 
         self.peerManager.newConnection.connect(self.newConnection)
 
+
+    def get_peers_connections(self):
+        return [item[1] for item in self.peers.items()]
 
     def sendMessage(self, message):
         if not message:
