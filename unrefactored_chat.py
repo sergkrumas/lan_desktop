@@ -1154,7 +1154,9 @@ class ChatDialog(QDialog):
         return
         # if self.listWidget.count() == 1:
         #     QMessageBox.information(self, "Chat", "Launch several instances of this program on your local network and start chatting!")
-
+    def closeEvent(self, event):
+        # не совсем корректно, но пока так оставлю
+        quit_app()
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
