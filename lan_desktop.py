@@ -54,7 +54,7 @@ BROADCASTINTERVAL = 2000
 BROADCASTPORT = 45000
 
 
-viewer = None
+viewer_portal = None
 keys_log_viewer = None
 capture_zone_widget_window = None
 
@@ -284,7 +284,7 @@ def show_screencast_keys_window(status, key_name):
 
 
 
-class Viewer(QWidget):
+class Portal(QWidget):
 
     def __init__(self):
         super().__init__()
@@ -456,8 +456,8 @@ class Viewer(QWidget):
         return fit_rect_into_rect(image_rect, self_rect)
 
     def closeEvent(self, event):
-        global viewer
-        viewer = None
+        global viewer_portal
+        viewer_portal = None
 
     def mouseTimerHandler(self):
         # передавать данные из mouseMoveEvent нельзя,
@@ -548,20 +548,20 @@ class Viewer(QWidget):
 
 def show_capture_window(image, capture_rect, connection):
 
-    global viewer
-    if viewer is None:
-        viewer = Viewer()
-        viewer.resize(capture_rect.width(), capture_rect.height())
-        viewer.move(10, 10)
-        viewer.show()
+    global viewer_portal
+    if viewer_portal is None:
+        viewer_portal = Portal()
+        viewer_portal.resize(capture_rect.width(), capture_rect.height())
+        viewer_portal.move(10, 10)
+        viewer_portal.show()
 
-    viewer.image_to_show = image
-    viewer.capture_rect = capture_rect
-    viewer.connection = connection
+    viewer_portal.image_to_show = image
+    viewer_portal.capture_rect = capture_rect
+    viewer_portal.connection = connection
     address = connection.socket.peerAddress().toString()
     title = f'Viewport for {address}'
-    viewer.setWindowTitle(title)
-    viewer.update()
+    viewer_portal.setWindowTitle(title)
+    viewer_portal.update()
 
 class DataType:
     PlainText = 0
