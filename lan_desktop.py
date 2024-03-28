@@ -1272,15 +1272,15 @@ class ChatDialog(QDialog):
 
         self.capture_combobox = QComboBox()
 
-        nameLb  = QLabel("Захват:", self)
+        nameLb  = QLabel("Capture region:", self)
         desktop = QDesktopWidget()
-        self.capture_combobox.addItem('Произвольная область', -2)
+        self.capture_combobox.addItem('User-defined region', -2)
         hor_layout.addWidget(nameLb)
         nameLb.setBuddy(self.capture_combobox)
 
-        self.capture_combobox.addItem('Все мониторы', -1)
+        self.capture_combobox.addItem('All monitors', -1)
         for i in range(0, desktop.screenCount()):
-            self.capture_combobox.addItem(f'Монитор {i+1}', i)
+            self.capture_combobox.addItem(f'Monitor {i+1}', i)
         # по дефолту выдаём содержимое первого монитора
         self.capture_combobox.setCurrentIndex(1)
 
