@@ -731,9 +731,10 @@ class Connection(QObject):
     newMessage = pyqtSignal(str, str)
 
     def deleteLater(self):
-        if self.isGreetingMessageSent:
-            if self.socket.isValid():
-                self.socket.waitForBytesWritten(2000)
+        # сокет уже удалён к этому времени и это только даёт эксепшен при закрытии приложения
+        # if self.isGreetingMessageSent:
+        #     if self.socket.isValid():
+        #         self.socket.waitForBytesWritten(2000)
         super().deleteLater()
 
     class states():
