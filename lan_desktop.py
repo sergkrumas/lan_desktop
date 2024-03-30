@@ -41,6 +41,34 @@ from _resizable_frameless_modificated import ResizableWidgetWindow
 from _utils import (fit_rect_into_rect, )
 
 
+
+
+class Globals():
+
+    last_reading = None
+    last_writing = None
+
+    reading_framerate = ''
+    writing_framerate = ''
+
+    @classmethod
+    def calculate_reading_framerate(cls):
+        if cls.last_reading is not None:
+            delta = (time.time() - cls.last_reading)*1000
+            value = 1000/delta
+            cls.reading_framerate = f'{value:.2f}'
+        cls.last_reading = time.time()
+        return cls.reading_framerate
+
+    @classmethod
+    def calculate_writing_framerate(cls):
+        if cls.last_writing is not None:
+            delta = (time.time() - cls.last_writing)*1000
+            value = 1000/delta            
+            cls.writing_framerate = f'{value:.2f}'
+        cls.last_writing = time.time()
+        return cls.writing_framerate
+
 PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
 
