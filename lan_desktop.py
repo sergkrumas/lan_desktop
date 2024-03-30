@@ -359,6 +359,9 @@ class Portal(QWidget):
 
     def __init__(self):
         super().__init__()
+
+        self.update_timestamp = time.time()
+
         self.image_to_show = None
         self.setMouseTracking(True)
 
@@ -374,7 +377,14 @@ class Portal(QWidget):
 
         self.show_log_keys = False
 
+        self.update_timer = QTimer()
+        self.update_timer.setInterval(1000)
+        self.update_timer.timeout.connect(self.update)
+        self.update_timer.start()
+
         self.menuBar = QMenuBar(self)
+
+        self.is_grayed = False
 
         appMenu = self.menuBar.addMenu('Application')
         exitAction = QAction('Exit', self)
@@ -477,9 +487,37 @@ class Portal(QWidget):
         self.keys_log = self.keys_log[:20]
         self.update()
 
+    def gray_received_image(self):
+        if not self.is_grayed:
+
+            
+            # image = self.image_to_show.scaled(300, 300, Qt.KeepAspectRatio)
+            # sizeImage = image.size()
+            # width = sizeImage.width()
+            # height = sizeImage.height()
+            # for f1 in range(width):
+            #     for f2 in range(height):
+            #         color = image.pixel(f1, f2)
+            #         gray = (qRed(color) + qGreen(color) + qBlue(color))/3
+            #         gray = int(gray)
+            #         image.setPixel(f1, f2, qRgb(gray, gray, gray))
+            # self.image_to_show = image
+
+            self.image_to_show = self.image_to_show.convertToFormat(QImage.Format_Mono)
+
+
+
+            self.is_grayed = True
+
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
+
+
+        span = 2 #seconds
+        if time.time() - self.update_timestamp > span:
+            self.gray_received_image()
+
 
         if self.image_to_show is not None:
             image_rect = self.image_to_show.rect()
@@ -492,6 +530,25 @@ class Portal(QWidget):
                 painter.setOpacity(0.95)
 
             painter.drawImage(viewport_rect, self.image_to_show, image_rect)
+
+        if self.is_grayed:
+
+            painter.save()
+
+            delta = int(time.time() - self.update_timestamp)
+            text = f'Ведомый компьютер недоступен уже {delta} секунд.\nСкорее всего, связь потеряна.'
+            align = Qt.AlignHCenter | Qt.AlignVCenter
+            rect = painter.boundingRect(self.rect(), align, text)
+            rect.adjust(-50, -50, 50, 50)
+
+            color = QColor(200, 50, 50, 220)
+            painter.setBrush(color)
+            painter.setPen(QPen(Qt.red, 2))
+            painter.drawRect(rect)
+
+            painter.restore()
+
+            painter.drawText(rect, align, text)
 
         if self.isKeyTranslationErrorVisible():
             self.animation_timer.start()
@@ -631,6 +688,8 @@ def show_capture_window(image, capture_rect, connection):
     viewer_portal.connection = connection
     address = connection.socket.peerAddress().toString()
     title = f'Viewport for {address}'
+    viewer_portal.update_timestamp = time.time()
+    viewer_portal.is_grayed = False
     viewer_portal.setWindowTitle(title)
     viewer_portal.update()
 
