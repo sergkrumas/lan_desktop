@@ -1532,7 +1532,7 @@ class ChatDialog(QDialog):
         hor_layout4.addWidget(self.framerate_label, 1)
         main_layout.addLayout(hor_layout4)
 
-        self.wakeOnLanButton = QPushButton('Send WakeOnLan magic socket to peer')
+        self.wakeOnLanButton = QPushButton('Send WakeOnLan magic packet to peer')
         self.wakeOnLanButton.clicked.connect(self.do_wake_on_lan)
         hor_layout.addWidget(self.wakeOnLanButton)
 
