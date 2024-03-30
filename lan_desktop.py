@@ -788,7 +788,7 @@ class Connection(QObject):
             self.socket_buffer = left_data
             return requested_data
 
-        self.socket_buffer = self.socket_buffer + self.socket.read(max(2**10, self.content_data_size))
+        self.socket_buffer = self.socket_buffer + self.socket.read(200000)
 
         self.data_full_to_read = True
 
@@ -845,8 +845,8 @@ class Connection(QObject):
                                 elif self.currentDataType == DataType.PlainText:
                                     self.newMessage.emit(self.username, value)
 
-                                elif self.currentDataType == DataType.Ping:
-                                    self.socket.write(prepare_data_to_write({DataType.Pong: ''}, None))
+                                # elif self.currentDataType == DataType.Ping:
+                                #     self.socket.write(prepare_data_to_write({DataType.Pong: ''}, None))
 
                                 elif self.currentDataType == DataType.Pong:
                                     self.pongTime.restart()
@@ -946,9 +946,9 @@ class Connection(QObject):
             self.socket.readyRead.emit()
 
     def sendPing(self):
-        if self.pongTime.elapsed() > PongTimeout:
+        # if self.pongTime.elapsed() > PongTimeout:
             # self.abort()
-            return
+            # return
 
         if chat_dialog.remote_control_chb.isChecked():
             capture_index = chat_dialog.retrieve_capture_index()
@@ -963,8 +963,9 @@ class Connection(QObject):
             chat_dialog.framerate_label.setText(text)
 
         else:
-            print('send ping')
-            self.socket.write(prepare_data_to_write({DataType.Ping: ''}, None))
+            pass
+            # print('send ping')
+            # self.socket.write(prepare_data_to_write({DataType.Ping: ''}, None))
 
     def sendGreetingMessage(self):
         self.socket.write(
