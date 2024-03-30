@@ -41,8 +41,6 @@ from _resizable_frameless_modificated import ResizableWidgetWindow
 from _utils import (fit_rect_into_rect, )
 
 
-MaxBufferSize = 1024000
-
 PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
 
