@@ -929,6 +929,8 @@ class MessageServer(QTcpServer):
         client_socket = server.nextPendingConnection()
         connection = Connection(None, client_socket=client_socket)
 
+        socket_info_to_chat('new user has knocked', client_socket)
+
         self.new_connection_handler(connection)
 
         clients_connections.append(connection)
@@ -1199,6 +1201,8 @@ class PeerManager(QObject):
                 socket.waitForConnected()
 
                 connection = Connection(self, client_socket=socket)
+                socket_info_to_chat('new peer added', socket)
+
 
                 global connections_to_servers
                 connections_to_servers.append(connection)
@@ -1293,6 +1297,19 @@ class ChatDialog(QDialog):
 
         hor_layout.addWidget(self.capture_combobox, Qt.AlignLeft)
         main_layout.addLayout(hor_layout)
+
+        self.framerate_label = QLabel()
+        self.framerate_label.setText('frame rate label')
+        self.framerate_label.setFixedHeight(80)
+
+        hor_layout4 = QHBoxLayout()
+        hor_layout4.setContentsMargins(0, 0, 0, 0)
+        hor_layout4.setSpacing(0)        
+        hor_layout4.addWidget(self.framerate_label, 1)
+        main_layout.addLayout(hor_layout4)
+
+        # print(self.framerate_label.geometry())
+
 
         if platform.system() == 'Linux':
             self.remote_control_chb.setChecked(True)
