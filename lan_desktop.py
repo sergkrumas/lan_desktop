@@ -831,10 +831,13 @@ class Connection(QObject):
                                 self.currentDataType, value = list(parsed_data.items())[0]
                                 if self.currentDataType == DataType.Greeting:
 
+                                    msg = value['msg']
+                                    mac = value['mac']
+
                                     addr = self.socket.peerAddress().toString()
                                     port = self.socket.peerPort()
 
-                                    self.username = f'{value}@{addr}:{port}'
+                                    self.username = f'{msg}@{addr}:{port} // {mac}'
 
                                     if not self.isGreetingMessageSent:
                                         self.sendGreetingMessage()
@@ -974,13 +977,39 @@ class Connection(QObject):
     def sendGreetingMessage(self):
         peer_address_string = self.socket.peerAddress().toString()
         local_address_string = self.socket.localAddress().toString()
+
+        mac_address = find_mac_for_local_socket_addr(local_address_string)
         msg = f'i\'m {local_address_string} sending greetings message to {peer_address_string}'
         chat_dialog.appendSystemMessage(msg)
         self.socket.write(
-            prepare_data_to_write({DataType.Greeting: self.greetingMessage}, None)
+            prepare_data_to_write({DataType.Greeting: {'msg': self.greetingMessage, 'mac': mac_address}}, None)
         )
         self.isGreetingMessageSent = True
 
+
+def find_mac_for_local_socket_addr(local_address_string):
+    for ip_addr, mac in retreive_ip_mac_pairs():
+        if local_address_string.endswith(ip_addr):
+            return mac
+    return 'Fuck! This is a disaster! MAC not found!'
+
+
+def retreive_ip_mac_pairs():
+    ip_mac_pairs = []
+    interfaces = QNetworkInterface.allInterfaces()
+    for interface in interfaces:
+        entries = interface.addressEntries()
+
+        current_ip = None
+        for entry in entries:
+            broadcastAddress = entry.broadcast()
+            if broadcastAddress != QHostAddress.Null and entry.ip() != QHostAddress.LocalHost:
+                current_ip = entry.ip() 
+
+        if not interface.flags() & QNetworkInterface.IsLoopBack:
+            ip_mac_pairs.append((current_ip.toString(), interface.hardwareAddress()))
+
+    return ip_mac_pairs
 
 
 
