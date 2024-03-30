@@ -861,7 +861,10 @@ class Connection(QObject):
                                     mouse_button = mouse_value
                                     if mouse_type == 'mousePos':
                                         x, y = mouse_value
-                                        pyautogui.moveTo(x, y)
+                                        try:
+                                            pyautogui.moveTo(x, y)
+                                        except:
+                                            pass
 
                                     elif mouse_type == 'mouseDown':
                                         pyautogui.mouseDown(button=mouse_button)
