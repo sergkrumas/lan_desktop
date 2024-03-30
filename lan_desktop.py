@@ -972,6 +972,10 @@ class Connection(QObject):
             # self.socket.write(prepare_data_to_write({DataType.Ping: ''}, None))
 
     def sendGreetingMessage(self):
+        peer_address_string = self.socket.peerAddress().toString()
+        local_address_string = self.socket.localAddress().toString()
+        msg = f'i\'m {local_address_string} sending greetings message to {peer_address_string}'
+        chat_dialog.appendSystemMessage(msg)
         self.socket.write(
             prepare_data_to_write({DataType.Greeting: self.greetingMessage}, None)
         )
@@ -1299,8 +1303,7 @@ def socket_info_to_chat(intro, socket):
     receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
     buffer_size = socket.readBufferSize()
 
-    msg = f'1 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
-    chat_dialog.appendSystemMessage(msg)
+    msg1 = f'1 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
 
     socket.setSocketOption(QAbstractSocket.SendBufferSizeSocketOption, 200000)
     socket.setSocketOption(QAbstractSocket.ReceiveBufferSizeSocketOption, 200000)
@@ -1316,7 +1319,13 @@ def socket_info_to_chat(intro, socket):
     receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
     buffer_size = socket.readBufferSize()
 
-    msg = f'2 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
+    msg2 = f'2 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
+
+    local_address_string = socket.localAddress().toString()
+    peer_address_string = socket.peerAddress().toString()
+    msg3 = f'socket local address {local_address_string}, socket peer address {peer_address_string}'
+
+    msg = '\n'.join((msg1, msg2, msg3))
     chat_dialog.appendSystemMessage(msg)
 
 
