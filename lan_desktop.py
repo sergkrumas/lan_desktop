@@ -924,6 +924,13 @@ class Connection(QObject):
             data = prepare_screenshot_to_transfer(capture_index)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
+            self.socket.flush()
+
+
+            value = Globals.calculate_writing_framerate()
+            text = f'фреймрейт отправки: {value}'
+            chat_dialog.framerate_label.setText(text)
+
         else:
             print('send ping')
             self.socket.write(prepare_data_to_write({DataType.Ping: ''}, None))
