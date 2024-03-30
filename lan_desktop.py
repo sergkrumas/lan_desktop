@@ -920,7 +920,7 @@ class Connection(QObject):
 
 
                                 value = Globals.calculate_reading_framerate()
-                                text = f'фреймрейт чтения: {value}'
+                                text = f'reading image framerate: {value}'
                                 chat_dialog.framerate_label.setText(text)
 
 
@@ -963,7 +963,7 @@ class Connection(QObject):
 
 
             value = Globals.calculate_writing_framerate()
-            text = f'фреймрейт отправки: {value}'
+            text = f'sending picture framerate: {value}'
             chat_dialog.framerate_label.setText(text)
 
         else:
