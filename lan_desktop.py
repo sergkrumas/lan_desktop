@@ -36,6 +36,9 @@ from PyQt5.QtNetwork import *
 
 import cbor2
 import pyautogui
+from wakeonlan import send_magic_packet
+
+
 
 from _resizable_frameless_modificated import ResizableWidgetWindow
 
@@ -1470,6 +1473,10 @@ class ChatDialog(QDialog):
         hor_layout4.addWidget(self.framerate_label, 1)
         main_layout.addLayout(hor_layout4)
 
+        self.wakeOnLanButton = QPushButton('Send WakeOnLan magic socket to peer')
+        self.wakeOnLanButton.clicked.connect(self.do_wake_on_lan)
+        hor_layout.addWidget(self.wakeOnLanButton)
+
 
         if platform.system() == 'Linux':
             self.remote_control_chb.setChecked(True)
@@ -1520,6 +1527,22 @@ class ChatDialog(QDialog):
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
+
+    def do_wake_on_lan(self):
+
+        item = self.listWidget.currentItem()
+        if item:
+            item_text = item.text()
+            splitter = " // "
+            if splitter in item_text:
+                mac = item_text.split()[-1]
+                mac = mac.strip().lower()
+                send_magic_packet(mac, ip_address='192.168.0.255')
+                self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}')
+                return
+        self.appendSystemMessage(f'WakeOnLAN: no any peer selected')
+
+
 
     def retrieve_capture_index(self):
         index = self.capture_combobox.currentIndex()
