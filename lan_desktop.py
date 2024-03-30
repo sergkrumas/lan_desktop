@@ -103,6 +103,9 @@ INT_SIZE = 4
 TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 DEBUG_STRING_SIZE = 50
 
+
+
+
 def make_capture_frame(capture_index):
     desktop = QDesktopWidget()
     MAX = 1000000000
@@ -206,6 +209,9 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
     # print('prepare_data_to_write', serial_data)
 
     return data_to_sent
+
+
+
 
 def prepare_screenshot_to_transfer(capture_index):
 
