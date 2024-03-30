@@ -1381,8 +1381,6 @@ class ChatDialog(QDialog):
         hor_layout4.addWidget(self.framerate_label, 1)
         main_layout.addLayout(hor_layout4)
 
-        # print(self.framerate_label.geometry())
-
 
         if platform.system() == 'Linux':
             self.remote_control_chb.setChecked(True)
