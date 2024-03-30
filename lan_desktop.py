@@ -88,7 +88,7 @@ PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
 
 # PingInterval = 1 * 1000
-PingInterval = 500
+PingInterval = 40
 
 
 BROADCASTINTERVAL = 2000
