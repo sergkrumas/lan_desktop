@@ -890,6 +890,13 @@ class Connection(QObject):
 
                                 show_capture_window(capture_image, QRect(*capture_rect_coords), self)
 
+
+                                value = Globals.calculate_reading_framerate()
+                                text = f'фреймрейт чтения: {value}'
+                                chat_dialog.framerate_label.setText(text)
+
+
+
                             elif file_chunk_info:
                                 write_file_chunk_data(file_chunk_info, binary_data, self.socket.peerAddress().toString())
 
