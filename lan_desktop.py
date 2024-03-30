@@ -250,7 +250,7 @@ def prepare_screenshot_to_transfer(capture_index):
     image.save(buffer, Globals.IMAGE_FORMAT, quality=50)
 
 
-    capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.right(), capture_rect.bottom()]
+    capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.width(), capture_rect.height()]
 
     return prepare_data_to_write(capture_rect_tuple, byte_array.data())
 
@@ -610,8 +610,10 @@ class Portal(QWidget):
         norm_x = viewport_pos.x() / viewport_rect.width()
         norm_y = viewport_pos.y() / viewport_rect.height()
         # print(viewport_pos, norm_x, norm_y)
-        x = int(norm_x*self.image_to_show.width())
-        y = int(norm_y*self.image_to_show.height())
+
+        x = int(norm_x*self.capture_rect.width()) + self.capture_rect.left()
+        y = int(norm_y*self.capture_rect.height()) + self.capture_rect.top()
+
         return x, y
 
     def isViewportReadyAndCursorInsideViewport(self):
