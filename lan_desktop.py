@@ -49,7 +49,7 @@ class Globals():
 
 
     IMAGE_FORMAT = 'jpg'
-
+    peers_list_filename = f'peers_list_{platform.system()}.list'
 
 
     last_reading = None
@@ -105,26 +105,23 @@ TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 DEBUG_STRING_SIZE = 50
 
 
-
-def update_peers_list(addr, port, mac):
-    filename = f'peers_list_{platform.system()}.list'
-
+def read_peers_list():
     data = None
-    if os.path.exists(filename):
-        with open(filename, 'r', encoding='utf8') as file:
+    if os.path.exists(Globals.peers_list_filename):
+        with open(Globals.peers_list_filename, 'r', encoding='utf8') as file:
             data = file.read()
-
     data_dict = dict()
     if not data:
         data_dict = {}
     else:
         data_dict = json.loads(data)
+    return data_dict
 
+def update_peers_list(addr, port, mac):
+    data_dict = read_peers_list()
     data_dict.update({addr: mac})
-
     data = json.dumps(data_dict)
-
-    with open(filename, 'w+', encoding='utf8') as file:
+    with open(Globals.peers_list_filename, 'w+', encoding='utf8') as file:
         file.write(data)
 
 def make_capture_frame(capture_index):
@@ -1066,7 +1063,7 @@ class MessageServer(QTcpServer):
 class Client(QObject):
 
     newMessage = pyqtSignal(str, str)
-    newParticipant = pyqtSignal(str)
+    newParticipant = pyqtSignal(str, object)
     participantLeft = pyqtSignal(str)
 
     def __init__(self, *args):
@@ -1155,7 +1152,7 @@ class Client(QObject):
         self.peers[socket.peerAddress()] = connection
         nick = connection.name()
         if nick:
-            self.newParticipant.emit(nick)
+            self.newParticipant.emit(nick, socket)
 
     def removeConnection(self, socket):
         if socket.peerAddress() in self.peers.keys():
@@ -1512,10 +1509,13 @@ class ChatDialog(QDialog):
         self.client.participantLeft.connect(self.participantLeft)
 
         self.myNickName = self.client.nickName()
-        self.newParticipant(self.myNickName)
+        self.newParticipant(self.myNickName, None)
 
         self.tableFormat.setBorder(0);
         QTimer.singleShot(10 * 1000, self.showInformation)
+
+        for ip, mac in read_peers_list().items():
+            self.listWidget.addItem(f'[inactive] {ip} // {mac}')
 
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
@@ -1569,9 +1569,24 @@ class ChatDialog(QDialog):
 
         self.lineEdit.clear()
 
-    def newParticipant(self, nick):
+    def newParticipant(self, nick, socket):
         if not nick:
             return
+
+
+        if socket is not None:
+            # removing [inactive] item
+            items_to_delete = []
+            peer_addr = socket.peerAddress().toString()
+
+            for n in range(self.listWidget.count()):
+                item = self.listWidget.item(n)
+                if peer_addr in item.text():
+                    items_to_delete.append(item)
+
+            for item in items_to_delete:
+                self.listWidget.takeItem(self.listWidget.row(item))
+
 
         color = self.textEdit.textColor()
         self.textEdit.setTextColor(Qt.gray)
@@ -1583,10 +1598,13 @@ class ChatDialog(QDialog):
         if not nick:
             return
         items = self.listWidget.findItems(nick, Qt.MatchExactly)
+        item = items[0]
 
         if not items:
             return
-        self.listWidget.takeItem(self.listWidget.row(items[0]))
+        self.listWidget.takeItem(self.listWidget.row(item))
+        inactive_item_text = f'[inactive] {item.text()}'
+        self.listWidget.addItem(inactive_item_text)
 
         color = self.textEdit.textColor()
         self.textEdit.setTextColor(Qt.gray)
