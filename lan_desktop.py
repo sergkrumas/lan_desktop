@@ -62,7 +62,7 @@ class Globals():
         if cls.last_reading is not None:
             delta = (time.time() - cls.last_reading)*1000
             value = 1000/delta
-            cls.reading_framerate = f'{value:.2f}'
+            cls.reading_framerate = f'{value:.2f} FPS'
         cls.last_reading = time.time()
         return cls.reading_framerate
 
@@ -71,7 +71,7 @@ class Globals():
         if cls.last_writing is not None:
             delta = (time.time() - cls.last_writing)*1000
             value = 1000/delta            
-            cls.writing_framerate = f'{value:.2f}'
+            cls.writing_framerate = f'{value:.2f} FPS'
         cls.last_writing = time.time()
         return cls.writing_framerate
 
