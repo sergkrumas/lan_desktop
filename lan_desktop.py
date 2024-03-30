@@ -45,6 +45,12 @@ from _utils import (fit_rect_into_rect, )
 
 class Globals():
 
+
+
+    IMAGE_FORMAT = 'jpg'
+
+
+
     last_reading = None
     last_writing = None
 
@@ -212,7 +218,10 @@ def prepare_screenshot_to_transfer(capture_index):
     byte_array = QByteArray()
     buffer = QBuffer(byte_array)
     buffer.open(QIODevice.WriteOnly)
-    image.save(buffer, "jpg")
+    # image.save(buffer, "jpg", quality=20)
+    # image.save(buffer, "jpg")
+    image.save(buffer, Globals.IMAGE_FORMAT, quality=50)
+
 
     capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.right(), capture_rect.bottom()]
 
@@ -894,7 +903,7 @@ class Connection(QObject):
                             if capture_rect_coords:
                                 input_byte_array = QByteArray(binary_data)
                                 capture_image = QImage()
-                                capture_image.loadFromData(input_byte_array, "jpg");
+                                capture_image.loadFromData(input_byte_array, Globals.IMAGE_FORMAT);
                                 print(f'recieved image, {len(binary_data)}, {capture_image.size()}')
 
                                 show_capture_window(capture_image, QRect(*capture_rect_coords), self)
