@@ -24,6 +24,7 @@ import sys
 import os
 import time
 import platform
+import json
 from functools import partial
 import hashlib
 from collections import defaultdict
@@ -105,6 +106,26 @@ DEBUG_STRING_SIZE = 50
 
 
 
+def update_peers_list(addr, port, mac):
+    filename = f'peers_list_{platform.system()}.list'
+
+    data = None
+    if os.path.exists(filename):
+        with open(filename, 'r', encoding='utf8') as file:
+            data = file.read()
+
+    data_dict = dict()
+    if not data:
+        data_dict = {}
+    else:
+        data_dict = json.loads(data)
+
+    data_dict.update({addr: mac})
+
+    data = json.dumps(data_dict)
+
+    with open(filename, 'w+', encoding='utf8') as file:
+        file.write(data)
 
 def make_capture_frame(capture_index):
     desktop = QDesktopWidget()
@@ -836,6 +857,8 @@ class Connection(QObject):
 
                                     addr = self.socket.peerAddress().toString()
                                     port = self.socket.peerPort()
+
+                                    update_peers_list(addr, port, mac)
 
                                     self.username = f'{msg}@{addr}:{port} // {mac}'
 
