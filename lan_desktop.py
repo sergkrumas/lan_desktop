@@ -74,7 +74,7 @@ class Globals():
     def calculate_writing_framerate(cls):
         if cls.last_writing is not None:
             delta = (time.time() - cls.last_writing)*1000
-            value = 1000/delta            
+            value = 1000/delta
             cls.writing_framerate = f'{value:.2f} FPS'
         cls.last_writing = time.time()
         return cls.writing_framerate
@@ -490,7 +490,7 @@ class Portal(QWidget):
     def gray_received_image(self):
         if not self.is_grayed:
 
-            
+
             # image = self.image_to_show.scaled(300, 300, Qt.KeepAspectRatio)
             # sizeImage = image.size()
             # width = sizeImage.width()
@@ -1086,7 +1086,7 @@ def retreive_ip_mac_pairs():
         for entry in entries:
             broadcastAddress = entry.broadcast()
             if broadcastAddress != QHostAddress.Null and entry.ip() != QHostAddress.LocalHost:
-                current_ip = entry.ip() 
+                current_ip = entry.ip()
 
         if not interface.flags() & QNetworkInterface.IsLoopBack:
             ip_mac_pairs.append((current_ip.toString(), interface.hardwareAddress()))
@@ -1479,7 +1479,7 @@ class ChatDialog(QDialog):
         self.enable_print = QCheckBox('Console output')
         hor_layout.addWidget(self.enable_print)
         def trigger_console_output_chb():
-            Globals.enable_print = self.enable_print.isChecked()    
+            Globals.enable_print = self.enable_print.isChecked()
         self.enable_print.stateChanged.connect(trigger_console_output_chb)
         self.enable_print.setChecked(False)
 
@@ -1528,7 +1528,7 @@ class ChatDialog(QDialog):
 
         hor_layout4 = QHBoxLayout()
         hor_layout4.setContentsMargins(0, 0, 0, 0)
-        hor_layout4.setSpacing(0)        
+        hor_layout4.setSpacing(0)
         hor_layout4.addWidget(self.framerate_label, 1)
         main_layout.addLayout(hor_layout4)
 
