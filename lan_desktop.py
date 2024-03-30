@@ -69,6 +69,15 @@ class Globals():
         cls.last_writing = time.time()
         return cls.writing_framerate
 
+    enable_print = False
+
+true_print = print
+
+def print(*args, **kwargs):
+    if Globals.enable_print:
+        true_print(*args, **kwargs)
+
+
 PongTimeout = 260 * 1000
 PingInterval = 5 * 1000
 
@@ -1300,6 +1309,13 @@ class ChatDialog(QDialog):
 
         self.remote_control_chb = QCheckBox('Allow Remote Control')
         hor_layout.addWidget(self.remote_control_chb)
+
+        self.enable_print = QCheckBox('Console output')
+        hor_layout.addWidget(self.enable_print)
+        def trigger_console_output_chb():
+            Globals.enable_print = self.enable_print.isChecked()    
+        self.enable_print.stateChanged.connect(trigger_console_output_chb)
+        self.enable_print.setChecked(False)
 
         self.show_log_keys_chb = QCheckBox('Show keys log')
         hor_layout.addWidget(self.show_log_keys_chb)
