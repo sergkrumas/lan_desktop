@@ -1289,6 +1289,32 @@ class PeerManager(QObject):
                     self.ipAddresses.append(entry.ip())
 
 
+def socket_info_to_chat(intro, socket):
+    send_size = socket.socketOption(QAbstractSocket.SendBufferSizeSocketOption)
+    receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
+    buffer_size = socket.readBufferSize()
+
+    msg = f'1 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
+    chat_dialog.appendSystemMessage(msg)
+
+    socket.setSocketOption(QAbstractSocket.SendBufferSizeSocketOption, 200000)
+    socket.setSocketOption(QAbstractSocket.ReceiveBufferSizeSocketOption, 200000)
+
+    socket.setSocketOption(QAbstractSocket.LowDelayOption, 1)
+    socket.setReadBufferSize(157000)
+
+    # Immediate = 64
+    Network_control = 224
+    socket.setSocketOption(QAbstractSocket.TypeOfServiceOption, Network_control)
+
+    send_size = socket.socketOption(QAbstractSocket.SendBufferSizeSocketOption)
+    receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
+    buffer_size = socket.readBufferSize()
+
+    msg = f'2 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
+    chat_dialog.appendSystemMessage(msg)
+
+
 class ChatDialog(QDialog):
 
     def __init__(self, parent=None, *args, **kwargs):
