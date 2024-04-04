@@ -80,7 +80,7 @@ def do_update(print_func):
         download(zip_FILENAME, print_func)
         moving_files(zip_FILENAME, print_func)
 
-        print_func('\nDONE!\n')
+        print_func('DONE!')
     else:
         print_func('no lan_desktop.py file found! Abort!')
 

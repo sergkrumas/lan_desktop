@@ -44,7 +44,7 @@ from wakeonlan import send_magic_packet
 from _resizable_frameless_modificated import ResizableWidgetWindow
 
 from _utils import (fit_rect_into_rect, )
-
+from update import do_update
 
 
 
@@ -1460,6 +1460,7 @@ class ChatDialog(QDialog):
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(9, 9, 9, 9)
         main_layout.setSpacing(6)
+        main_layout.addSpacing(50)
 
         layout_h = QHBoxLayout()
         layout_h.setContentsMargins(0, 0, 0, 0)
@@ -1588,6 +1589,21 @@ class ChatDialog(QDialog):
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
+
+        self.menuBar = QMenuBar(self)
+        appMenu = self.menuBar.addMenu('Application')
+        updateAppAction = QAction('Update', self)
+        updateAppAction.triggered.connect(self.update_app)
+        appMenu.addAction(updateAppAction)
+
+    def print_to_console(self, *args):
+        self.appendSystemMessage(*args)
+        # для того, чтобы успело что-то отобразиться
+        app = QApplication.instance()
+        app.processEvents()
+
+    def update_app(self):
+        do_update(self.print_to_console)
 
     def do_wake_on_lan(self):
 
