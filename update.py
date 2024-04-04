@@ -83,4 +83,5 @@ def do_update(print_func):
     else:
         print_func('no lan_desktop.py file found! Abort!')
 
-    input('\tPress any key to exit...')
+    if print_func is __builtins__.print:
+        input('\tPress any key to exit...')
