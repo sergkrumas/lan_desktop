@@ -358,8 +358,8 @@ def show_screencast_keys_window(status, key_name):
 
 class Portal(QWidget):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent):
+        super().__init__(parent)
 
         self.update_timestamp = time.time()
 
@@ -386,6 +386,7 @@ class Portal(QWidget):
         self.menuBar = QMenuBar(self)
 
         self.is_grayed = False
+        self.activated = False
 
         appMenu = self.menuBar.addMenu('Application')
         exitAction = QAction('Exit', self)
@@ -510,69 +511,72 @@ class Portal(QWidget):
 
             self.is_grayed = True
 
+    def drawMessageInCenter(self, painter, text):
+        painter.save()
+        align = Qt.AlignHCenter | Qt.AlignVCenter
+        rect = painter.boundingRect(self.rect(), align, text)
+        rect.adjust(-50, -50, 50, 50)
+
+        color = QColor(200, 50, 50, 220)
+        painter.setBrush(color)
+        painter.setPen(QPen(Qt.red, 2))
+        painter.drawRect(rect)
+        painter.restore()
+        painter.drawText(rect, align, text)
+
+
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
 
 
-        span = 2 #seconds
-        if time.time() - self.update_timestamp > span:
-            self.gray_received_image()
+        if self.activated:
+            SPAN = 2 #seconds
+            if time.time() - self.update_timestamp > SPAN:
+                self.gray_received_image()
 
+            if self.image_to_show is not None:
+                image_rect = self.image_to_show.rect()
+                viewport_rect = self.get_viewport_rect()
 
-        if self.image_to_show is not None:
-            image_rect = self.image_to_show.rect()
-            viewport_rect = self.get_viewport_rect()
+                mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
+                if viewport_rect.contains(mapped_cursor_pos):
+                    painter.setOpacity(1.0)
+                else:
+                    painter.setOpacity(0.95)
 
-            mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
-            if viewport_rect.contains(mapped_cursor_pos):
+                painter.drawImage(viewport_rect, self.image_to_show, image_rect)
+
+            if self.is_grayed:
+
+                delta = int(time.time() - self.update_timestamp)
+                text = f'Ведомый компьютер недоступен уже {delta} секунд.\nСкорее всего, связь потеряна.'
+                self.drawMessageInCenter(painter, text)
+
+            if self.isKeyTranslationErrorVisible():
+                self.animation_timer.start()
+                painter.setOpacity(self.keyTranslationErrorOpacity())
+
+                r = viewport_rect
+                painter.setBrush(Qt.NoBrush)
+                MAX_COUNT = 50
+                for i in range(MAX_COUNT):
+                    opacity = 255-int(i/MAX_COUNT*255)
+                    color = QColor(230, 50, 50, opacity)
+                    painter.setPen(QPen(color))
+                    painter.drawRect(r)
+                    r = r.adjusted(1, 1, -1, -1)
                 painter.setOpacity(1.0)
+
             else:
-                painter.setOpacity(0.95)
+                self.animation_timer.stop()
 
-            painter.drawImage(viewport_rect, self.image_to_show, image_rect)
-
-        if self.is_grayed:
-
-            painter.save()
-
-            delta = int(time.time() - self.update_timestamp)
-            text = f'Ведомый компьютер недоступен уже {delta} секунд.\nСкорее всего, связь потеряна.'
-            align = Qt.AlignHCenter | Qt.AlignVCenter
-            rect = painter.boundingRect(self.rect(), align, text)
-            rect.adjust(-50, -50, 50, 50)
-
-            color = QColor(200, 50, 50, 220)
-            painter.setBrush(color)
-            painter.setPen(QPen(Qt.red, 2))
-            painter.drawRect(rect)
-
-            painter.restore()
-
-            painter.drawText(rect, align, text)
-
-        if self.isKeyTranslationErrorVisible():
-            self.animation_timer.start()
-            painter.setOpacity(self.keyTranslationErrorOpacity())
-
-            r = viewport_rect
-            painter.setBrush(Qt.NoBrush)
-            MAX_COUNT = 50
-            for i in range(MAX_COUNT):
-                opacity = 255-int(i/MAX_COUNT*255)
-                color = QColor(230, 50, 50, opacity)
-                painter.setPen(QPen(color))
-                painter.drawRect(r)
-                r = r.adjusted(1, 1, -1, -1)
-            painter.setOpacity(1.0)
+            if self.show_log_keys:
+                draw_key_log(self, painter)
 
         else:
-            self.animation_timer.stop()
-
-        if self.show_log_keys:
-
-            draw_key_log(self, painter)
-
+            painter.fillRect(self.rect(), QColor(20, 20, 20, 255))
+            self.drawMessageInCenter(painter, 'Портал неактивен')
 
         painter.end()
 
@@ -680,11 +684,8 @@ class Portal(QWidget):
 def show_capture_window(image, capture_rect, connection):
 
     global viewer_portal
-    if viewer_portal is None:
-        viewer_portal = Portal()
-        viewer_portal.resize(capture_rect.width(), capture_rect.height())
-        viewer_portal.move(10, 10)
-        viewer_portal.show()
+
+    viewer_portal = chat_dialog.portal_widget
 
     viewer_portal.image_to_show = image
     viewer_portal.capture_rect = capture_rect
@@ -693,7 +694,7 @@ def show_capture_window(image, capture_rect, connection):
     title = f'Viewport for {address}'
     viewer_portal.update_timestamp = time.time()
     viewer_portal.is_grayed = False
-    viewer_portal.setWindowTitle(title)
+    viewer_portal.activated = True
     viewer_portal.update()
 
 class DataType:
@@ -1547,8 +1548,7 @@ class ChatDialog(QDialog):
         self.wakeOnLanButton.clicked.connect(self.do_wake_on_lan)
         hor_layout.addWidget(self.wakeOnLanButton)
 
-        self.portal_widget = QWidget(self)
-        # self.setMinimumSize(1200, 1000)
+        self.portal_widget = Portal(self)
         self.portal_widget.resize(1200, 1000)
 
         if platform.system() == 'Linux':
