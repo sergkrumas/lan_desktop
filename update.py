@@ -14,9 +14,7 @@ import zipfile
 import shutil
 
 
-def clear_current_folder():
-
-
+def clear_current_folder(print):
     print(f'cleaning current folder ... ')
     current_dir = os.path.dirname(__file__)
     for filename in os.listdir(current_dir):
@@ -28,13 +26,11 @@ def clear_current_folder():
                 if not (file_path.endswith('.git') or file_path.startswith('peers_list')):
                     shutil.rmtree(file_path)
         except Exception as e:
-            print('Failed to delete %s. Reason: %s' % (file_path, e))
+            print(f'Failed to delete {file_path}. Reason: {e}')
 
-def download(zip_FILENAME):
+def download(zip_FILENAME, print):
     zip_URL = "https://github.com/sergkrumas/lan_desktop/archive/refs/heads/master.zip"
     print(f'downloading .zip from {zip_URL}')
-
-
 
     urllib.request.urlretrieve(zip_URL, zip_FILENAME)
     zf = zipfile.ZipFile(zip_FILENAME)
@@ -51,9 +47,7 @@ def download(zip_FILENAME):
             print('next try...')
         time.sleep(1)
 
-
-def moving_files(zip_FILENAME):
-
+def moving_files(zip_FILENAME, print):
     # moving files from lan_desktop-master to current folder
     current_dir = os.path.dirname(__file__)
     updated_folder = os.path.join(current_dir, 'lan_desktop-master')
@@ -73,19 +67,20 @@ def moving_files(zip_FILENAME):
     print(f'removing {zip_FILENAME}... ')
     shutil.rmtree(updated_folder)
 
+def do_update(print_func):
 
-def main():
+    if print_func is None:
+        print_func = __builtins__.print
 
     zip_FILENAME = "update.zip"
 
-    clear_current_folder()
-    download(zip_FILENAME)
-    moving_files(zip_FILENAME)
+    if 'lan_desktop.py' in os.listdir('.'):
+        clear_current_folder(print_func)
+        download(zip_FILENAME, print_func)
+        moving_files(zip_FILENAME, print_func)
 
-    print('\nDONE!\n')
+        print_func('\nDONE!\n')
+    else:
+        print_func('no lan_desktop.py file found! Abort!')
 
     input('\tPress any key to exit...')
-
-
-if __name__ == '__main__':
-    main()
