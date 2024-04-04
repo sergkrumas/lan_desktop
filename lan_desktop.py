@@ -28,6 +28,7 @@ import json
 from functools import partial
 import hashlib
 from collections import defaultdict
+import builtins
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -81,11 +82,10 @@ class Globals():
 
     enable_print = False
 
-true_print = print
 
 def print(*args, **kwargs):
     if Globals.enable_print:
-        true_print(*args, **kwargs)
+        builtins.print(*args, **kwargs)
 
 
 PongTimeout = 260 * 1000
