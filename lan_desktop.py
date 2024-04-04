@@ -388,10 +388,6 @@ class Portal(QWidget):
         self.is_grayed = False
         self.activated = False
 
-        appMenu = self.menuBar.addMenu('Application')
-        exitAction = QAction('Exit', self)
-        exitAction.triggered.connect(quit_app)
-        appMenu.addAction(exitAction)
 
         keyboard_send_actions_data = (
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
