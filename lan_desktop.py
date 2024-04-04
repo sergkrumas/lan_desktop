@@ -577,6 +577,9 @@ class Portal(QWidget):
             if self.show_log_keys:
                 draw_key_log(self, painter)
 
+            text = Globals.reading_framerate
+            painter.drawText(self.rect(), Qt.AlignRight | Qt.AlignTop, text)
+
         else:
             painter.fillRect(self.rect(), QColor(20, 20, 20, 255))
             self.drawMessageInCenter(painter, 'Портал неактивен')
