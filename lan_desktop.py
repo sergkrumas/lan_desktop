@@ -29,6 +29,7 @@ from functools import partial
 import hashlib
 from collections import defaultdict
 import builtins
+import subprocess
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -1596,14 +1597,22 @@ class ChatDialog(QDialog):
         updateAppAction.triggered.connect(self.update_app)
         appMenu.addAction(updateAppAction)
 
-    def print_to_console(self, *args):
+    def print_to_chat(self, *args):
         self.appendSystemMessage(*args)
         # для того, чтобы успело что-то отобразиться
         app = QApplication.instance()
         app.processEvents()
 
+    def reboot_app(self):
+        subprocess.Popen([sys.executable, *sys.argv])
+        sys.exit()
+
     def update_app(self):
-        do_update(self.print_to_console)
+        do_update(self.print_to_chat)
+        for n in [3, 2, 1]:
+            self.print_to_chat(f'reboot in {n}')
+            time.sleep(1)
+        self.reboot_app()
 
     def do_wake_on_lan(self):
 
