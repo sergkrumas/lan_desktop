@@ -1640,11 +1640,16 @@ class ChatDialog(QDialog):
         sys.exit()
 
     def update_app(self):
-        do_update(self.print_to_chat)
-        for n in [3, 2, 1]:
-            self.print_to_chat(f'reboot in {n}')
-            time.sleep(1)
-        self.reboot_app()
+        ret = QMessageBox.question(None,
+            "Вопрос", "Download update from repository ans install?",
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Close,
+        )
+        if ret == QMessageBox.Yes:
+            do_update(self.print_to_chat)
+            for n in [3, 2, 1]:
+                self.print_to_chat(f'reboot in {n}')
+                time.sleep(1)
+            self.reboot_app()
 
     def do_wake_on_lan(self):
         item = self.listWidget.currentItem()
