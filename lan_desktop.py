@@ -30,6 +30,9 @@ import hashlib
 from collections import defaultdict
 import builtins
 import subprocess
+import traceback
+import locale
+import ctypes
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -51,6 +54,10 @@ from update import do_update
 
 class Globals():
 
+    DEBUG = True
+
+    VERSION_INFO = "v0.1"
+    AUTHOR_INFO = "by Sergei Krumas"
 
 
     IMAGE_FORMAT = 'jpg'
@@ -1760,14 +1767,92 @@ class ChatDialog(QDialog):
 
 
 
+
+
+def show_system_tray(app, icon):
+    sti = QSystemTrayIcon(app)
+    sti.setIcon(icon)
+    sti.setToolTip(f"LAN-DESKTOP {Globals.VERSION_INFO} {Globals.AUTHOR_INFO}")
+    app.setProperty("stray_icon", sti)
+    @pyqtSlot()
+    def on_trayicon_activated(reason):
+        if reason == QSystemTrayIcon.Trigger: # левая кнопка мыши
+            pass
+        if reason == QSystemTrayIcon.Context: # правая кнопка мыши
+            menu = QMenu()
+            menu.addSeparator()
+            quit = menu.addAction('Quit')
+            action = menu.exec_(QCursor().pos())
+            if action == quit:
+                app = QApplication.instance()
+                app.quit()
+    sti.activated.connect(on_trayicon_activated)
+    sti.show()
+    return sti
+
+
+def get_crashlog_filepath():
+    return os.path.join(os.path.dirname(__file__), "crash.log")
+
+
+def excepthook(exc_type, exc_value, exc_tb):
+    # пишем инфу о краше
+    if isinstance(exc_tb, str):
+        traceback_lines = exc_tb
+    else:
+        traceback_lines = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+    locale.setlocale(locale.LC_ALL, "russian")
+    datetime_string = time.strftime("%A, %d %B %Y %X").capitalize()
+    dt = "{0} {1} {0}".format(" "*15, datetime_string)
+    dt_framed = "{0}\n{1}\n{0}\n".format("-"*len(dt), dt)
+    with open(get_crashlog_filepath(), "a+", encoding="utf8") as crash_log:
+        crash_log.write("\n"*10)
+        crash_log.write(dt_framed)
+        crash_log.write("\n")
+        crash_log.write(traceback_lines)
+    print("*** excepthook info ***")
+    print(traceback_lines)
+    app = QApplication.instance()
+    if app:
+        stray_icon = app.property("stray_icon")
+        if stray_icon:
+            stray_icon.hide()
+    sys.exit()
+
+
 def main():
-    app = QApplication(sys.argv)
+
+    args = sys.argv
+    os.chdir(os.path.dirname(__file__))
+    sys.excepthook = excepthook
+
+    app = QApplication(args)
+
+    if platform.system() == 'Windows':
+        appid = 'sergei_krumas.LAN_DESKTOP.client.1'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+
+    path_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "icon.png"))
+    icon = QIcon(path_icon)
+    app.setWindowIcon(icon)
 
     global chat_dialog
     chat_dialog = ChatDialog()
     chat_dialog.show()
 
+    stray_icon = show_system_tray(app, icon)
+
     app.exec()
 
+    # после закрытия апликухи
+    stray_icon = app.property("stray_icon")
+    if stray_icon:
+        stray_icon.hide()
+
+    sys.exit()
+
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        excepthook(type(e), e, traceback.format_exc())
