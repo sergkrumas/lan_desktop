@@ -12,6 +12,7 @@ import time
 import urllib.request
 import zipfile
 import shutil
+import builtins
 
 
 def clear_current_folder(print):
@@ -70,7 +71,7 @@ def moving_files(zip_FILENAME, print):
 def do_update(print_func):
 
     if print_func is None:
-        print_func = __builtins__.print
+        print_func = builtins.print
 
     zip_FILENAME = "update.zip"
 
@@ -83,5 +84,5 @@ def do_update(print_func):
     else:
         print_func('no lan_desktop.py file found! Abort!')
 
-    if print_func is __builtins__.print:
+    if print_func is builtins.print:
         input('\tPress any key to exit...')
