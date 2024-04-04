@@ -33,6 +33,7 @@ import subprocess
 import traceback
 import locale
 import ctypes
+import webbrowser
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -1458,6 +1459,9 @@ class ChatDialog(QDialog):
         else:
             remove_from_startup(self.STARTUP_CONFIG[0])
 
+    def go_to_app_page(self):
+        webbrowser.open("https://github.com/sergkrumas/lan_desktop")
+
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__()
 
@@ -1476,18 +1480,24 @@ class ChatDialog(QDialog):
         self.setWindowTitle('Chat')
 
         self.menuBar = QMenuBar(self)
+        self.menuBar.setMinimumSize(300, self.menuBar.height())
         appMenu = self.menuBar.addMenu('Application')
 
         updateAppAction = QAction('Update', self)
         updateAppAction.triggered.connect(self.update_app)
         appMenu.addAction(updateAppAction)
 
-
         winautorun_toggle = QAction('Run on Windows start', self)
         winautorun_toggle.setCheckable(True)
         winautorun_toggle.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
         winautorun_toggle.triggered.connect(self.handle_windows_startup_chbx)
         appMenu.addAction(winautorun_toggle)
+
+        aboutMenu = self.menuBar.addMenu('About')
+
+        about_action = QAction('Application page on Github', self)
+        about_action.triggered.connect(self.go_to_app_page)        
+        aboutMenu.addAction(about_action)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(9, 9, 9, 9)
