@@ -1455,13 +1455,18 @@ class ChatDialog(QDialog):
 
         self.show_log_keys = False
 
-        self.setGeometry(0, 0, 1000, 349)
         self.setWindowTitle('Chat')
+
+        self.menuBar = QMenuBar(self)
+        appMenu = self.menuBar.addMenu('Application')
+        updateAppAction = QAction('Update', self)
+        updateAppAction.triggered.connect(self.update_app)
+        appMenu.addAction(updateAppAction)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(9, 9, 9, 9)
-        main_layout.setSpacing(6)
-        main_layout.addSpacing(50)
+
+        main_layout.addSpacing(self.menuBar.height())
 
         layout_h = QHBoxLayout()
         layout_h.setContentsMargins(0, 0, 0, 0)
@@ -1472,8 +1477,10 @@ class ChatDialog(QDialog):
         self.textEdit.setFocusPolicy(Qt.NoFocus)
 
         self.listWidget = QListWidget()
-        self.listWidget.setMaximumSize(400, 2000)
         self.listWidget.setFocusPolicy(Qt.NoFocus)
+
+        self.textEdit.setMinimumSize(350, 400)
+        self.listWidget.setMinimumSize(350, 400)
 
         hor_layout = QHBoxLayout()
 
@@ -1540,15 +1547,19 @@ class ChatDialog(QDialog):
         self.wakeOnLanButton.clicked.connect(self.do_wake_on_lan)
         hor_layout.addWidget(self.wakeOnLanButton)
 
+        self.portal_widget = QWidget(self)
+        # self.setMinimumSize(1200, 1000)
+        self.portal_widget.resize(1200, 1000)
 
         if platform.system() == 'Linux':
             self.remote_control_chb.setChecked(True)
 
         if True:
-            splitter = QSplitter(Qt.Horizontal)
-            splitter.addWidget(self.textEdit)
-            splitter.addWidget(self.listWidget)
-            layout_h.addWidget(splitter)
+            splt = QSplitter(Qt.Horizontal)
+            splt.addWidget(self.textEdit)
+            splt.addWidget(self.portal_widget)
+            splt.addWidget(self.listWidget)
+            layout_h.addWidget(splt)
         else:
             layout_h.addWidget(self.textEdit)
             layout_h.addWidget(self.listWidget)
@@ -1587,15 +1598,11 @@ class ChatDialog(QDialog):
         for ip, mac in read_peers_list().items():
             self.listWidget.addItem(f'[inactive] {ip} // {mac}')
 
+        self.resize(1920, 1080)
+
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
-
-        self.menuBar = QMenuBar(self)
-        appMenu = self.menuBar.addMenu('Application')
-        updateAppAction = QAction('Update', self)
-        updateAppAction.triggered.connect(self.update_app)
-        appMenu.addAction(updateAppAction)
 
     def print_to_chat(self, *args):
         self.appendSystemMessage(*args)
@@ -1615,7 +1622,6 @@ class ChatDialog(QDialog):
         self.reboot_app()
 
     def do_wake_on_lan(self):
-
         item = self.listWidget.currentItem()
         if item:
             item_text = item.text()
@@ -1627,8 +1633,6 @@ class ChatDialog(QDialog):
                 self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}')
                 return
         self.appendSystemMessage(f'WakeOnLAN: no any peer selected')
-
-
 
     def retrieve_capture_index(self):
         index = self.capture_combobox.currentIndex()
