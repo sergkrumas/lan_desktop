@@ -49,7 +49,7 @@ from _resizable_frameless_modificated import ResizableWidgetWindow
 
 from _utils import (fit_rect_into_rect, )
 from update import do_update
-
+from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
 
 
 class Globals():
@@ -1449,10 +1449,21 @@ def socket_info_to_chat(intro, socket):
 
 class ChatDialog(QDialog):
 
+    def handle_windows_startup_chbx(self, status):
+        if status:
+            add_to_startup(*self.STARTUP_CONFIG)
+        else:
+            remove_from_startup(self.STARTUP_CONFIG[0])
+
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__()
 
         self.client = Client(self)
+
+        self.STARTUP_CONFIG = (
+            'lan_desktop_explorer_launcher',
+            os.path.join(os.path.dirname(__file__), "lan_desktop.py")
+        )
 
         self.myNickName = ''
         self.tableFormat = QTextTableFormat()
@@ -1463,9 +1474,17 @@ class ChatDialog(QDialog):
 
         self.menuBar = QMenuBar(self)
         appMenu = self.menuBar.addMenu('Application')
+
         updateAppAction = QAction('Update', self)
         updateAppAction.triggered.connect(self.update_app)
         appMenu.addAction(updateAppAction)
+
+
+        winautorun_toggle = QAction('Run on Windows start', self)
+        winautorun_toggle.setCheckable(True)
+        winautorun_toggle.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
+        winautorun_toggle.triggered.connect(self.handle_windows_startup_chbx)
+        appMenu.addAction(winautorun_toggle)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(9, 9, 9, 9)
