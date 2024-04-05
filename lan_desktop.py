@@ -50,7 +50,13 @@ from _resizable_frameless_modificated import ResizableWidgetWindow
 
 from _utils import (fit_rect_into_rect, )
 from update import do_update
-from on_windows_startup import is_app_in_startup, add_to_startup, remove_from_startup
+
+try:
+    from on_windows_startup import (is_app_in_startup, add_to_startup, remove_from_startup)
+except:
+    is_app_in_startup = None
+    add_to_startup = None
+    remove_from_startup = None
 
 
 class Globals():
@@ -396,6 +402,11 @@ class Portal(QWidget):
         self.is_grayed = False
         self.activated = False
 
+        self.editing_mode = False
+
+        self.canvas_origin = QPoint(600, 500)
+        self.canvas_scale_x = 1.0
+        self.canvas_scale_y = 1.0
 
         keyboard_send_actions_data = (
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
@@ -426,6 +437,15 @@ class Portal(QWidget):
         action.triggered.connect(partial(toggle_, self, 'show_log_keys'))
         viewMenu.addAction(action)
 
+        toggle_editing_mode = QAction('Editing Mode', self)
+        toggle_editing_mode.setCheckable(True)
+        toggle_editing_mode.setChecked(self.editing_mode)
+        toggle_editing_mode.triggered.connect(partial(toggle_, self, 'editing_mode'))
+        self.menuBar.addAction(toggle_editing_mode)
+
+
+
+
         self.key_attr_names = {getattr(Qt, attrname): attrname for attrname in dir(Qt) if attrname.startswith('Key_')}
         self.keys_log = []
 
@@ -455,6 +475,51 @@ class Portal(QWidget):
 
         self.key_translate_error_duration = .4
         self.key_translate_error_timestamp = time.time() - self.key_translate_error_duration
+
+    def doScaleCanvas(self, scroll_value, ctrl, shift, no_mod,
+                pivot=None, factor_x=None, factor_y=None, precalculate=False, canvas_origin=None, canvas_scale_x=None, canvas_scale_y=None):
+
+        if pivot is None:
+            pivot = self.mapFromGlobal(QCursor().pos())
+
+        scale_speed = 10.0
+        if scroll_value > 0:
+            factor = scale_speed/(scale_speed-1)
+        else:
+            factor = (scale_speed-1)/scale_speed
+
+        if factor_x is None:
+            factor_x = factor
+
+        if factor_y is None:
+            factor_y = factor
+
+        if ctrl:
+            factor_x = factor
+            factor_y = 1.0
+        elif shift:
+            factor_x = 1.0
+            factor_y = factor
+
+        _canvas_origin = canvas_origin if canvas_origin is not None else self.canvas_origin
+        _canvas_scale_x = canvas_scale_x if canvas_scale_x is not None else self.canvas_scale_x
+        _canvas_scale_y = canvas_scale_y if canvas_scale_y is not None else self.canvas_scale_y
+
+        _canvas_scale_x *= factor_x
+        _canvas_scale_y *= factor_y
+
+        _canvas_origin -= pivot
+        _canvas_origin = QPointF(_canvas_origin.x()*factor_x, _canvas_origin.y()*factor_y)
+        _canvas_origin += pivot
+
+        if precalculate:
+            return _canvas_scale_x, _canvas_scale_y, _canvas_origin
+
+        self.canvas_origin  = _canvas_origin
+        self.canvas_scale_x = _canvas_scale_x
+        self.canvas_scale_y = _canvas_scale_y
+
+        self.update()
 
     def isKeyTranslationErrorVisible(self):
         if time.time() - self.key_translate_error_timestamp < self.key_translate_error_duration:
@@ -626,28 +691,38 @@ class Portal(QWidget):
             painter.fillRect(self.rect(), QColor(20, 20, 20, 255))
             self.drawMessageInCenter(painter, 'Портал неактивен')
 
+        if self.editing_mode:
+
+            painter.setPen(QPen(QColor(255, 50, 50), 3, Qt.DotLine))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+
+
         painter.end()
 
     def get_viewport_rect(self):
         image_rect = self.image_to_show.rect()
 
-        self_rect = self.rect()
-        self_rect.setTop(self.menuBar.rect().height())
+        image_rect.setWidth(int(image_rect.width()*self.canvas_scale_x))
+        image_rect.setHeight(int(image_rect.height()*self.canvas_scale_y))
+        canvas_origin = QPointF(self.canvas_origin).toPoint()
+        image_rect.moveCenter(canvas_origin)
 
-        return fit_rect_into_rect(image_rect, self_rect)
+        return image_rect
 
     def closeEvent(self, event):
         global viewer_portal
         viewer_portal = None
 
     def mouseTimerHandler(self):
-        # передавать данные из mouseMoveEvent нельзя,
-        # потому что он слишком часто триггерится и заваливает данными ведомое приложение,
-        # по крайней мере на приложуха в виртуалке Linux захлёбывается
-        if self.isViewportReadyAndCursorInsideViewport():
-            x, y = self.mapViewportToClient()
-            mouse_data_dict = {DataType.MouseData: {'mousePos': [x, y]}}
-            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+        if not self.editing_mode:
+            # передавать данные из mouseMoveEvent нельзя,
+            # потому что он слишком часто триггерится и заваливает данными ведомое приложение,
+            # по крайней мере на приложуха в виртуалке Linux захлёбывается
+            if self.isViewportReadyAndCursorInsideViewport():
+                x, y = self.mapViewportToClient()
+                mouse_data_dict = {DataType.MouseData: {'mousePos': [x, y]}}
+                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def mouseAnimationTimerHandler(self):
         self.update()
@@ -678,11 +753,25 @@ class Portal(QWidget):
         return False
 
     def mouseMoveEvent(self, event):
+        if self.editing_mode:
+            if event.buttons() == Qt.LeftButton:
+                delta = QPoint(event.pos() - self.ocp)
+                self.canvas_origin = self.start_canvas_origin + delta
+                chat_dialog.appendSystemMessage('move')
+
         self.update()
 
     def mousePressEvent(self, event):
         self.setFocus(Qt.MouseFocusReason)
-        if self.isViewportReadyAndCursorInsideViewport():
+
+        if self.editing_mode:
+            if event.button() == Qt.LeftButton:
+                self.start_canvas_origin = QPointF(self.canvas_origin)
+                self.ocp = event.pos()
+                chat_dialog.appendSystemMessage('press')                
+                self.update()
+
+        elif self.isViewportReadyAndCursorInsideViewport():
             data_key = 'mouseDown'
             if event.button() == Qt.LeftButton:
                 mouse_button = 'left'
@@ -694,7 +783,10 @@ class Portal(QWidget):
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def mouseReleaseEvent(self, event):
-        if self.isViewportReadyAndCursorInsideViewport():
+        if self.editing_mode:
+            pass
+
+        elif self.isViewportReadyAndCursorInsideViewport():
             data_key = 'mouseUp'
             if event.button() == Qt.LeftButton:
                 mouse_button = 'left'
@@ -707,9 +799,16 @@ class Portal(QWidget):
 
     def wheelEvent(self, event):
         scroll_value = event.angleDelta().y()/240
-        data_key = 'mouseWheel'
-        mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
-        self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+        if self.editing_mode:
+            ctrl = event.modifiers() & Qt.ControlModifier
+            shift = event.modifiers() & Qt.ShiftModifier
+            alt = event.modifiers() & Qt.AltModifier
+            no_mod = event.modifiers() == Qt.NoModifier
+            self.doScaleCanvas(scroll_value, ctrl, shift, no_mod)
+        else:
+            data_key = 'mouseWheel'
+            mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
+            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def sendKeyData(self, event, data_key):
         pyautogui_arg = self.translateQtKeyEventDataToPyautoguiArgumentValue(event)
@@ -1529,11 +1628,12 @@ class ChatDialog(QDialog):
         updateAppAction.triggered.connect(self.update_app)
         appMenu.addAction(updateAppAction)
 
-        winautorun_toggle = QAction('Run on Windows start', self)
-        winautorun_toggle.setCheckable(True)
-        winautorun_toggle.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
-        winautorun_toggle.triggered.connect(self.handle_windows_startup_chbx)
-        appMenu.addAction(winautorun_toggle)
+        if is_app_in_startup is not None:
+            winautorun_toggle = QAction('Run on Windows start', self)
+            winautorun_toggle.setCheckable(True)
+            winautorun_toggle.setChecked(is_app_in_startup(self.STARTUP_CONFIG[0]))
+            winautorun_toggle.triggered.connect(self.handle_windows_startup_chbx)
+            appMenu.addAction(winautorun_toggle)
 
         aboutMenu = self.menuBar.addMenu('About')
 
