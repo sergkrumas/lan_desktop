@@ -472,9 +472,50 @@ class Portal(QWidget):
         self.key_translate_error_timestamp = time.time()
 
     def translateQtKeyEventDataToPyautoguiArgumentValue(self, event):
+
+        SCANCODES_TO_ASCII = {
+            16: 'Q',
+            17: 'W',
+            18: 'E',
+            19: 'R',
+            20: 'T',
+            21: 'Y',
+            22: 'U',
+            23: 'I',
+            24: 'O',
+            25: 'P',
+            30: 'A',
+            31: 'S',
+            32: 'D',
+            33: 'F',
+            34: 'G',
+            35: 'H',
+            36: 'J',
+            37: 'K',
+            38: 'L',
+            44: 'Z',
+            45: 'X',
+            46: 'C',
+            47: 'V',
+            48: 'B',
+            49: 'N',
+            50: 'M',
+            26: '[',
+            27: ']',
+            39: ';',
+            40: '\'',
+            43: '\\',
+            51: ',',
+            52: '.',
+            53: '/',
+        }
+        ascii_text = SCANCODES_TO_ASCII.get(event.nativeScanCode(), None)
+        chat_dialog.appendSystemMessage(ascii_text)
         key = event.key()
         attr_name = self.key_attr_names.get(key)
         if attr_name is None:
+            if ascii_text is not None:
+                return ascii_text.lower() #для поддержки русской раскладки и прочих отличных от дефолтной латинской
             return None
         attr_name = attr_name[4:]
         attr_name = attr_name.lower()
