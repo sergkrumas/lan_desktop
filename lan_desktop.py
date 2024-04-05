@@ -681,6 +681,7 @@ class Portal(QWidget):
         self.update()
 
     def mousePressEvent(self, event):
+        self.setFocus(Qt.MouseFocusReason)
         if self.isViewportReadyAndCursorInsideViewport():
             data_key = 'mouseDown'
             if event.button() == Qt.LeftButton:
