@@ -9,7 +9,7 @@ from PyQt5.QtGui import (QPixmap, QBrush, QRegion, QImage, QRadialGradient, QCol
                     QCursor, QImageReader, QTransform, QPolygonF, QVector2D)
 
 
-
+import sys
 
 
 
@@ -56,3 +56,24 @@ def fit_rect_into_rect(source_rect, input_rect, float_mode=False):
         return result
     else:
         return result.toRect()
+
+def get_bounding_pointsF(points):
+    MAX = float(sys.maxsize)
+    left = MAX
+    right = -MAX
+    top = MAX
+    bottom = -MAX
+    if not points:
+        raise Exception("Empty list!")
+    for p in points:
+        left = min(p.x(), left)
+        right = max(p.x(), right)
+        top = min(p.y(), top)
+        bottom = max(p.y(), bottom)
+    return QPointF(left, top), QPointF(right, bottom)
+
+def build_valid_rect(p1, p2):
+    return QRect(*get_bounding_points((p1, p2)))
+
+def build_valid_rectF(p1, p2):
+    return QRectF(*get_bounding_pointsF((p1, p2)))

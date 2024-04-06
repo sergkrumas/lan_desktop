@@ -27,7 +27,7 @@ import platform
 import json
 from functools import partial
 import hashlib
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import builtins
 import subprocess
 import traceback
@@ -48,7 +48,7 @@ from wakeonlan import send_magic_packet
 
 from _resizable_frameless_modificated import ResizableWidgetWindow
 
-from _utils import (fit_rect_into_rect, )
+from _utils import (fit_rect_into_rect, build_valid_rectF)
 from update import do_update
 
 try:
@@ -58,11 +58,13 @@ except:
     add_to_startup = None
     remove_from_startup = None
 
+RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
 class Globals():
 
     DEBUG = True
     ENABLE_PRINT = False
+    DEBUG_VIZ = False
 
     BROADCASTINTERVAL = 2000
     BROADCASTPORT = 45000
@@ -393,6 +395,18 @@ class Portal(QWidget):
         self.key_translate_error_timestamp = time.time() - self.key_translate_error_duration
 
 
+        self.input_POINT1 = None
+        self.input_POINT2 = None
+        self.capture_region_rect = None
+
+        self.user_input_started = False
+        self.is_rect_defined = False
+        self.is_rect_being_redefined = False
+
+        self.undermouse_region_rect = None
+        self.undermouse_region_info = None
+        self.region_num = 0
+
         self.setMouseTracking(True)
 
         self.mouse_timer = QTimer()
@@ -699,13 +713,49 @@ class Portal(QWidget):
             self.drawMessageInCenter(painter, 'Портал неактивен')
 
         if self.editing_mode:
-
             painter.setPen(QPen(QColor(255, 50, 50), 3, Qt.DotLine))
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
 
 
+
+        cursor_pos = self.mapFromGlobal(QCursor().pos())
+        self.draw_vertical_horizontal_lines(painter, cursor_pos)
+
         painter.end()
+
+    def draw_vertical_horizontal_lines(self, painter, cursor_pos):
+        painter.save()
+        line_pen = QPen(QColor(127, 127, 127, 172), 2, Qt.DashLine)
+        painter.setCompositionMode(QPainter.RasterOp_SourceXorDestination)
+
+        if self.is_input_points_set():
+            painter.setPen(line_pen)
+            input_POINT1 = self.mapToViewport(self.input_POINT1)
+            input_POINT2 = self.mapToViewport(self.input_POINT2)
+            left = input_POINT1.x()
+            top = input_POINT1.y()
+            right = input_POINT2.x()
+            bottom = input_POINT2.y()
+            # vertical left
+            painter.drawLine(QPointF(left, 0), QPointF(left, self.height()))
+            # horizontal top
+            painter.drawLine(QPointF(0, top), QPointF(self.width(), top))
+            # vertical right
+            painter.drawLine(QPointF(right, 0), QPointF(right, self.height()))
+            # horizontal bottom
+            painter.drawLine(QPointF(0, bottom), QPointF(self.width(), bottom))
+            if self.undermouse_region_rect and Globals.DEBUG_VIZ:
+                painter.setBrush(QBrush(Qt.green, Qt.DiagCrossPattern))
+                painter.drawRect(self.undermouse_region_rect)
+        else:
+            painter.setPen(line_pen)
+            pos_x = cursor_pos.x()
+            pos_y = cursor_pos.y()
+            painter.drawLine(pos_x, 0, pos_x, self.height())
+            painter.drawLine(0, pos_y, self.width(), pos_y)
+        painter.restore()
+
 
     def get_viewport_rect(self):
         image_rect = self.image_to_show.rect()
@@ -747,6 +797,88 @@ class Portal(QWidget):
 
         return x, y
 
+    def define_regions_rects_and_set_cursor(self, write_data=True):
+
+        if not self.capture_region_rect:
+            self.setCursor(Qt.ArrowCursor)
+            return
+
+        # --------------------------------- #
+        # 1         |2          |3          #
+        #           |           |           #
+        # ----------x-----------x---------- #
+        # 4         |5 (sel)    |6          #
+        #           |           |           #
+        # ----------x-----------x---------- #
+        # 7         |8          |9          #
+        #           |           |           #
+        # --------------------------------- #
+
+        touching_move_data = {
+            1: ("setTopLeft",       "xy",   "topLeft"       ),
+            2: ("setTop",           "y",    "top"           ),
+            3: ("setTopRight",      "xy",   "topRight"      ),
+            4: ("setLeft",          "x",    "left"          ),
+            5: (None,               None,   None            ),
+            6: ("setRight",         "x",    "right"         ),
+            7: ("setBottomLeft",    "xy",   "bottomLeft"    ),
+            8: ("setBottom",        "y",    "bottom"        ),
+            9: ("setBottomRight",   "xy",   "bottomRight"   ),
+        }
+        regions_cursors = {
+            1: QCursor(Qt.SizeFDiagCursor),
+            2: QCursor(Qt.SizeVerCursor),
+            3: QCursor(Qt.SizeBDiagCursor),
+            4: QCursor(Qt.SizeHorCursor),
+            5: QCursor(Qt.CrossCursor),
+            6: QCursor(Qt.SizeHorCursor),
+            7: QCursor(Qt.SizeBDiagCursor),
+            8: QCursor(Qt.SizeVerCursor),
+            9: QCursor(Qt.SizeFDiagCursor)
+        }
+
+        crr = self.mapToViewportRectF(self.capture_region_rect)
+        # amr = self._all_monitors_rect
+        amr = self.rect()
+        regions = {
+            1: QRectF(QPointF(0, 0), crr.topLeft()),
+            2: QRectF(QPointF(crr.left(), 0), crr.topRight()),
+            3: QRectF(QPointF(crr.right(), 0), QPointF(amr.right(), crr.top())),
+            4: QRectF(QPointF(0, crr.top()), crr.bottomLeft()),
+            5: crr,
+            6: QRectF(crr.topRight(), QPointF(amr.right(), crr.bottom())),
+            7: QRectF(QPointF(0, crr.bottom()), QPointF(crr.left(), amr.bottom())),
+            8: QRectF(crr.bottomLeft(), QPointF(crr.right(), amr.bottom())),
+            9: QRectF(crr.bottomRight(), amr.bottomRight())
+        }
+        cursor_pos = self.mapFromGlobal(QCursor().pos())
+        for number, rect in regions.items():
+            if rect.contains(cursor_pos):
+                self.undermouse_region_rect = rect
+                self.region_num = number
+                if write_data:
+                    self.setCursor(regions_cursors[number])
+                # чтобы не глитчили курсоры
+                # на пограничных зонах прекращаем цикл
+                break
+        if write_data:
+            if self.region_num == 5:
+                self.undermouse_region_info = None
+            else:
+                data = touching_move_data[self.region_num]
+                self.undermouse_region_info = RegionInfo(*data)
+
+    def mapToViewportRectF(self, rect):
+        rect = QRectF(
+            self.mapToViewport(rect.topLeft()),
+            self.mapToViewport(rect.bottomRight())
+        )
+        return rect
+
+    def get_region_info(self):
+        self.define_regions_rects_and_set_cursor()
+        self.update()
+
     def isViewportReadyAndCursorInsideViewport(self):
         if self.image_to_show is not None and self.isActiveWindow():
             mapped_cursor_pos = self.mapFromGlobal(QCursor().pos())
@@ -755,22 +887,120 @@ class Portal(QWidget):
                 return True
         return False
 
+    def is_point_set(self, p):
+        return p is not None
+
+    def get_first_set_point(self, points, default):
+        for point in points:
+            if self.is_point_set(point):
+                return point
+        return default
+
+    def is_input_points_set(self):
+        return self.is_point_set(self.input_POINT1) and self.is_point_set(self.input_POINT2)
+
+    def build_input_rectF(self, cursor_pos):
+        ip1 = self.get_first_set_point([self.input_POINT1], cursor_pos)
+        ip2 = self.get_first_set_point([self.input_POINT2, self.input_POINT1], cursor_pos)
+        return build_valid_rectF(ip1, ip2)
+
+    def mapToCanvas(self, viewport_pos):
+        delta = QPointF(viewport_pos - self.canvas_origin)
+        canvas_pos = QPointF(delta.x()/self.canvas_scale_x, delta.y()/self.canvas_scale_y)
+        return canvas_pos
+
+    def mapToViewport(self, canvas_pos):
+        scaled_rel_pos = QPointF(canvas_pos.x()*self.canvas_scale_x, canvas_pos.y()*self.canvas_scale_y)
+        viewport_pos = self.canvas_origin + scaled_rel_pos
+        return viewport_pos
+
+
     def mouseMoveEvent(self, event):
+        alt = event.modifiers() & Qt.AltModifier
         if self.editing_mode:
             if event.buttons() == Qt.LeftButton:
-                delta = QPoint(event.pos() - self.ocp)
-                self.canvas_origin = self.start_canvas_origin + delta
+                if alt:
+                    if not self.is_rect_defined:
+                        # для первичного задания области захвата
+                        event_pos = self.mapToCanvas(event.pos())
+                        if not self.is_point_set(self.input_POINT1):
+                            self.user_input_started = True
+                            self.input_POINT1 = event_pos
+                        else:
+                            modifiers = event.modifiers()
+                            if modifiers == Qt.NoModifier:
+                                self.input_POINT2 = event_pos
+                            else:
+                                delta = self.input_POINT1 - event_pos
+                                if modifiers & Qt.ControlModifier:
+                                    delta.setX(delta.x() // 10 * 10 + 1)
+                                    delta.setY(delta.y() // 10 * 10 + 1)
+                                if modifiers & Qt.ShiftModifier:
+                                    delta = self.equilateral_delta(delta)
+                                self.input_POINT2 = self.input_POINT1 - delta
+
+                    elif self.undermouse_region_info and not self.drag_inside_capture_zone:
+                        # для изменения области захвата после первичного задания
+                        self.is_rect_being_redefined = True
+                        delta = self.mapToCanvas(QPointF(event.pos())) - self.start_cursor_position
+                        set_func_attr = self.undermouse_region_info.setter
+                        data_id = self.undermouse_region_info.coords
+                        get_func_attr = self.undermouse_region_info.getter
+                        get_func = getattr(self.capture_region_rect, get_func_attr)
+                        set_func = getattr(self.capture_region_rect, set_func_attr)
+                        if self.capture_redefine_start_value is None:
+                            self.capture_redefine_start_value = get_func()
+                        if data_id == "x":
+                            set_func(self.capture_redefine_start_value + delta.x())
+                        if data_id == "y":
+                            set_func(self.capture_redefine_start_value + delta.y())
+                        if data_id == "xy":
+                            set_func(self.capture_redefine_start_value + delta)
+
+                        # необходимо для нормальной работы
+                        self.capture_region_rect = build_valid_rectF(
+                            self.capture_region_rect.topLeft(), self.capture_region_rect.bottomRight()
+                        )
+
+                        self.input_POINT1 = self.capture_region_rect.topLeft()
+                        self.input_POINT2 = self.capture_region_rect.bottomRight()
+
+                else:
+                    delta = QPoint(event.pos() - self.ocp)
+                    self.canvas_origin = self.start_canvas_origin + delta
+
+
+
+
+
+
+
 
         self.update()
 
     def mousePressEvent(self, event):
         self.setFocus(Qt.MouseFocusReason)
 
+        alt = event.modifiers() & Qt.AltModifier
+
         if self.editing_mode:
             if event.button() == Qt.LeftButton:
-                self.start_canvas_origin = QPointF(self.canvas_origin)
-                self.ocp = event.pos()
-                self.update()
+                if alt:
+
+                    self.start_cursor_position = self.mapToCanvas(QPointF(event.pos()))
+                    self.capture_redefine_start_value = None
+                    self.get_region_info()
+                    if self.undermouse_region_info is None:
+                        self.drag_inside_capture_zone = True
+                        if self.capture_region_rect:
+                            self.elementsMousePressEvent(event)
+                    else:
+                        self.drag_inside_capture_zone = False
+
+                else:
+                    self.start_canvas_origin = QPointF(self.canvas_origin)
+                    self.ocp = event.pos()
+                    self.update()
 
         elif self.isViewportReadyAndCursorInsideViewport():
             data_key = 'mouseDown'
@@ -784,8 +1014,29 @@ class Portal(QWidget):
             self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
 
     def mouseReleaseEvent(self, event):
+        alt = event.modifiers() & Qt.AltModifier
         if self.editing_mode:
-            pass
+            if event.button() == Qt.LeftButton:
+                if alt:
+
+
+                    if self.drag_inside_capture_zone:
+                        self.drag_inside_capture_zone = False
+                        if self.is_rect_defined:
+                            pass
+                    if self.user_input_started:
+                        if not self.is_input_points_set():
+                            # это должно помочь от крашей
+                            self.user_input_started = False
+                            self.input_POINT1 = None
+                            self.input_POINT2 = None
+                            return
+                        self.is_rect_defined = True
+                        self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+                        self.is_rect_being_redefined = False
+                    self.get_region_info() # здесь только для установки курсора
+
+
 
         elif self.isViewportReadyAndCursorInsideViewport():
             data_key = 'mouseUp'
