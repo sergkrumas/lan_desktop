@@ -837,8 +837,7 @@ def show_capture_window(image, capture_rect, connection):
 
 class DataType:
     PlainText = 0
-    Ping = 1
-    Pong = 2
+
     Greeting = 3
     Undefined = 4
     MouseData = 5
@@ -970,17 +969,17 @@ class Connection(QObject):
 
         self.greetingMessage = 888
         self.username = 'unknown'
-        self.pingTimer = QTimer()
-        self.pongTime = QElapsedTimer()
+        self.screenshotTimer = QTimer()
+
         self.buffer = ''
 
-        self.pingTimer.setInterval(PingInterval)
+        self.screenshotTimer.setInterval(PingInterval)
         self.currentDataType = DataType.Undefined
         self.isGreetingMessageSent = False
 
         self.socket.readyRead.connect(self.processReadyRead)
-        self.socket.disconnected.connect(self.pingTimer.stop)
-        self.pingTimer.timeout.connect(self.sendPing)
+        self.socket.disconnected.connect(self.screenshotTimer.stop)
+        self.screenshotTimer.timeout.connect(self.sendScreenshot)
         self.socket.connected.connect(self.sendGreetingMessage)
 
         self.socket_buffer = bytes()
@@ -1066,18 +1065,11 @@ class Connection(QObject):
                                     if not self.isGreetingMessageSent:
                                         self.sendGreetingMessage()
 
-                                    self.pingTimer.start()
-                                    self.pongTime.start()
+                                    self.screenshotTimer.start()
                                     self.readyForUse.emit()
 
                                 elif self.currentDataType == DataType.PlainText:
                                     self.newMessage.emit(self.username, value)
-
-                                # elif self.currentDataType == DataType.Ping:
-                                #     self.socket.write(prepare_data_to_write({DataType.Pong: ''}, None))
-
-                                elif self.currentDataType == DataType.Pong:
-                                    self.pongTime.restart()
 
                                 elif self.currentDataType == DataType.MouseData:
 
@@ -1176,7 +1168,7 @@ class Connection(QObject):
         if self.data_full_to_read and len(self.socket_buffer) > TCP_MESSAGE_HEADER_SIZE:
             self.socket.readyRead.emit()
 
-    def sendPing(self):
+    def sendScreenshot(self):
 
         if chat_dialog.remote_control_chb.isChecked():
             capture_index = chat_dialog.retrieve_capture_index()
