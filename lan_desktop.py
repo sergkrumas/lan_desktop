@@ -373,7 +373,23 @@ class Portal(QWidget):
 
         self.update_timestamp = time.time()
 
+        self.connection = None
         self.image_to_show = None
+
+        self.is_grayed = False
+        self.activated = False
+
+        self.editing_mode = False
+        self.show_log_keys = False
+
+        self.canvas_origin = QPoint(600, 500)
+        self.canvas_scale_x = 1.0
+        self.canvas_scale_y = 1.0
+
+        self.key_translate_error_duration = .4
+        self.key_translate_error_timestamp = time.time() - self.key_translate_error_duration
+
+
         self.setMouseTracking(True)
 
         self.mouse_timer = QTimer()
@@ -381,12 +397,9 @@ class Portal(QWidget):
         self.mouse_timer.timeout.connect(self.mouseTimerHandler)
         self.mouse_timer.start()
 
-
         self.animation_timer = QTimer()
         self.animation_timer.setInterval(100)
         self.animation_timer.timeout.connect(self.mouseAnimationTimerHandler)
-
-        self.show_log_keys = False
 
         self.update_timer = QTimer()
         self.update_timer.setInterval(1000)
@@ -394,15 +407,6 @@ class Portal(QWidget):
         self.update_timer.start()
 
         self.menuBar = QMenuBar(self)
-
-        self.is_grayed = False
-        self.activated = False
-
-        self.editing_mode = False
-
-        self.canvas_origin = QPoint(600, 500)
-        self.canvas_scale_x = 1.0
-        self.canvas_scale_y = 1.0
 
         keyboard_send_actions_data = (
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
@@ -439,9 +443,6 @@ class Portal(QWidget):
         toggle_editing_mode.triggered.connect(partial(toggle_, self, 'editing_mode'))
         self.menuBar.addAction(toggle_editing_mode)
 
-
-
-
         self.key_attr_names = {getattr(Qt, attrname): attrname for attrname in dir(Qt) if attrname.startswith('Key_')}
         self.keys_log = []
 
@@ -468,9 +469,6 @@ class Portal(QWidget):
         'shift', 'shiftleft', 'shiftright', 'sleep', 'space', 'stop', 'subtract', 'tab',
         'up', 'volumedown', 'volumemute', 'volumeup', 'win', 'winleft', 'winright', 'yen',
         'command', 'option', 'optionleft', 'optionright']
-
-        self.key_translate_error_duration = .4
-        self.key_translate_error_timestamp = time.time() - self.key_translate_error_duration
 
     def doScaleCanvas(self, scroll_value, ctrl, shift, no_mod,
                 pivot=None, factor_x=None, factor_y=None, precalculate=False, canvas_origin=None, canvas_scale_x=None, canvas_scale_y=None):
