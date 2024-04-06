@@ -69,6 +69,8 @@ class Globals():
 
     SCREENSHOT_SENDING_INTERVAL = 40 # for 25 FPS
 
+    file_sending_timers = []
+
     INT_SIZE = 4
     TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 
@@ -103,9 +105,24 @@ class Globals():
         cls.last_writing = time.time()
         return cls.writing_framerate
 
+    def read_peers_list():
+        data = None
+        if os.path.exists(Globals.peers_list_filename):
+            with open(Globals.peers_list_filename, 'r', encoding='utf8') as file:
+                data = file.read()
+        data_dict = dict()
+        if not data:
+            data_dict = {}
+        else:
+            data_dict = json.loads(data)
+        return data_dict
 
-    file_sending_timers = []
-
+    def update_peers_list(addr, port, mac):
+        data_dict = read_peers_list()
+        data_dict.update({addr: mac})
+        data = json.dumps(data_dict)
+        with open(Globals.peers_list_filename, 'w+', encoding='utf8') as file:
+            file.write(data)
 
 
 
@@ -130,24 +147,7 @@ capture_zone_widget_window = None
 
 
 
-def read_peers_list():
-    data = None
-    if os.path.exists(Globals.peers_list_filename):
-        with open(Globals.peers_list_filename, 'r', encoding='utf8') as file:
-            data = file.read()
-    data_dict = dict()
-    if not data:
-        data_dict = {}
-    else:
-        data_dict = json.loads(data)
-    return data_dict
 
-def update_peers_list(addr, port, mac):
-    data_dict = read_peers_list()
-    data_dict.update({addr: mac})
-    data = json.dumps(data_dict)
-    with open(Globals.peers_list_filename, 'w+', encoding='utf8') as file:
-        file.write(data)
 
 def make_capture_frame(capture_index):
     desktop = QDesktopWidget()
@@ -1055,7 +1055,7 @@ class Connection(QObject):
                                     addr = self.socket.peerAddress().toString()
                                     port = self.socket.peerPort()
 
-                                    update_peers_list(addr, port, mac)
+                                    Globals.update_peers_list(addr, port, mac)
 
                                     self.username = f'{msg}@{addr}:{port} // {mac}'
 
@@ -1743,7 +1743,7 @@ class ChatDialog(QDialog):
         self.tableFormat.setBorder(0);
         QTimer.singleShot(10 * 1000, self.showInformation)
 
-        for ip, mac in read_peers_list().items():
+        for ip, mac in Globals.read_peers_list().items():
             self.listWidget.addItem(f'[inactive] {ip} // {mac}')
 
         self.resize(1920, 1080)
