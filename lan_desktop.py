@@ -1700,15 +1700,11 @@ class ChatDialog(QDialog):
         if platform.system() == 'Linux':
             self.remote_control_chb.setChecked(True)
 
-        if True:
-            splt = QSplitter(Qt.Horizontal)
-            splt.addWidget(self.textEdit)
-            splt.addWidget(self.portal_widget)
-            splt.addWidget(self.listWidget)
-            layout_h.addWidget(splt)
-        else:
-            layout_h.addWidget(self.textEdit)
-            layout_h.addWidget(self.listWidget)
+        splt = QSplitter(Qt.Horizontal)
+        splt.addWidget(self.textEdit)
+        splt.addWidget(self.portal_widget)
+        splt.addWidget(self.listWidget)
+        layout_h.addWidget(splt)
 
         layout_h2 = QHBoxLayout()
         layout_h2.setContentsMargins(0, 0, 0, 0)
