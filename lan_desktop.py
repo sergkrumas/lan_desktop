@@ -387,7 +387,7 @@ class Portal(QWidget):
         self.editing_mode = False
         self.show_log_keys = False
 
-        self.canvas_origin = QPoint(600, 500)
+        self.canvas_origin = QPoint(0, 0)
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0
 
@@ -764,7 +764,7 @@ class Portal(QWidget):
         image_rect.setWidth(int(image_rect.width()*self.canvas_scale_x))
         image_rect.setHeight(int(image_rect.height()*self.canvas_scale_y))
         canvas_origin = QPointF(self.canvas_origin).toPoint()
-        image_rect.moveCenter(canvas_origin)
+        image_rect.moveTopLeft(canvas_origin)
 
         return image_rect
 
