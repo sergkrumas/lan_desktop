@@ -845,7 +845,7 @@ def show_capture_window(image, capture_rect, connection):
 
 
 
-class SendTimer(QTimer):
+class SendFileTimer(QTimer):
     def __init__(self, filepath):
         super().__init__()
         Globals.file_sending_timers.append(self)
@@ -898,7 +898,7 @@ class SendTimer(QTimer):
 
 def send_files(paths):
     for path in paths:
-        SendTimer(path)
+        SendFileTimer(path)
 
 recieving_files = defaultdict(int)
 recieving_files_objs = defaultdict(None)
