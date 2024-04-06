@@ -720,9 +720,8 @@ class Portal(QWidget):
             painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
 
 
-
-        cursor_pos = self.mapFromGlobal(QCursor().pos())
-        self.draw_vertical_horizontal_lines(painter, cursor_pos)
+            cursor_pos = self.mapFromGlobal(QCursor().pos())
+            self.draw_vertical_horizontal_lines(painter, cursor_pos)
 
         painter.end()
 
