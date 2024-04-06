@@ -69,6 +69,8 @@ class Globals():
 
     SCREENSHOT_SENDING_INTERVAL = 40 # for 25 FPS
 
+    INT_SIZE = 4
+    TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 
     VERSION_INFO = "v0.1"
     AUTHOR_INFO = "by Sergei Krumas"
@@ -118,8 +120,6 @@ def print(*args, **kwargs):
 keys_log_viewer = None
 capture_zone_widget_window = None
 
-INT_SIZE = 4
-TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 
 
 def read_peers_list():
@@ -230,7 +230,7 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
         bin_binary = b''
         bin_length = 0
     total_data_length = serial_length + bin_length
-    header = total_data_length.to_bytes(INT_SIZE, 'big') + serial_length.to_bytes(INT_SIZE, 'big') + bin_length.to_bytes(INT_SIZE, 'big')
+    header = total_data_length.to_bytes(Globals.INT_SIZE, 'big') + serial_length.to_bytes(Globals.INT_SIZE, 'big') + bin_length.to_bytes(Globals.INT_SIZE, 'big')
     data_to_sent = header + serial_binary + bin_binary
 
     # print('prepare_data_to_write', serial_data)
@@ -1011,13 +1011,13 @@ class Connection(QObject):
 
         self.data_full_to_read = True
 
-        # while len(self.socket_buffer) > TCP_MESSAGE_HEADER_SIZE and self.data_full_to_read:
+        # while len(self.socket_buffer) > Globals.TCP_MESSAGE_HEADER_SIZE and self.data_full_to_read:
         if True:
             if self.readState == self.states.readSize:
-                if len(self.socket_buffer) >= TCP_MESSAGE_HEADER_SIZE:
-                    self.content_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
-                    self.cbor2_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
-                    self.binary_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
+                if len(self.socket_buffer) >= Globals.TCP_MESSAGE_HEADER_SIZE:
+                    self.content_data_size = int.from_bytes(retrieve_data(Globals.INT_SIZE), 'big')
+                    self.cbor2_data_size = int.from_bytes(retrieve_data(Globals.INT_SIZE), 'big')
+                    self.binary_data_size = int.from_bytes(retrieve_data(Globals.INT_SIZE), 'big')
                     self.readState = self.states.readData
                     print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer))
                     # print('size read', self.content_data_size)
@@ -1161,7 +1161,7 @@ class Connection(QObject):
                     self.data_full_to_read = False
                     print('not enough data to read', len(self.socket_buffer), self.content_data_size)
 
-        if self.data_full_to_read and len(self.socket_buffer) > TCP_MESSAGE_HEADER_SIZE:
+        if self.data_full_to_read and len(self.socket_buffer) > Globals.TCP_MESSAGE_HEADER_SIZE:
             self.socket.readyRead.emit()
 
     def sendScreenshot(self):
