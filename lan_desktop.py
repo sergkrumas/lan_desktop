@@ -661,6 +661,8 @@ class Portal(QWidget):
         painter.begin(self)
 
 
+        painter.fillRect(self.rect(), Qt.black)
+
         if self.activated:
             WAIT_FOR_SCREENSHOT_SECONDS = 3 #seconds
             if time.time() - self.update_timestamp > WAIT_FOR_SCREENSHOT_SECONDS:
