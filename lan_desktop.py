@@ -1708,6 +1708,7 @@ class ChatDialog(QDialog):
         splt.addWidget(self.portal_widget)
         splt.addWidget(self.listWidget)
         layout_h.addWidget(splt)
+        self.splt = splt
 
         layout_h2 = QHBoxLayout()
         layout_h2.setContentsMargins(0, 0, 0, 0)
@@ -1750,7 +1751,10 @@ class ChatDialog(QDialog):
         self.move(rect.topLeft())
 
     def testButtonHandler(self):
-        pass
+        sizes = self.splt.sizes()
+        self.appendSystemMessage(str(sizes))
+        sizes[1] = 0
+        self.splt.setSizes(sizes)
 
     def print_to_chat(self, *args):
         self.appendSystemMessage(*args)
