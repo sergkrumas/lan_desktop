@@ -120,7 +120,6 @@ capture_zone_widget_window = None
 
 INT_SIZE = 4
 TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
-DEBUG_STRING_SIZE = 50
 
 
 def read_peers_list():
@@ -217,14 +216,6 @@ def make_user_defined_capture_screenshot(capture_rect):
 
 def prepare_data_to_write(serial_data, binary_attachment_data):
 
-
-    if serial_data:
-        debug_string = str(serial_data)
-
-    debug_string += "*"*(DEBUG_STRING_SIZE-len(debug_string))
-    debug_string = debug_string[:DEBUG_STRING_SIZE]
-    debug_string = debug_string.encode('utf8')
-
     if serial_data is not None:
         serial_binary = cbor2.dumps(serial_data)
         serial_length = len(serial_binary)
@@ -240,7 +231,7 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
         bin_length = 0
     total_data_length = serial_length + bin_length
     header = total_data_length.to_bytes(INT_SIZE, 'big') + serial_length.to_bytes(INT_SIZE, 'big') + bin_length.to_bytes(INT_SIZE, 'big')
-    data_to_sent = debug_string + header + serial_binary + bin_binary
+    data_to_sent = header + serial_binary + bin_binary
 
     # print('prepare_data_to_write', serial_data)
 
@@ -1024,12 +1015,11 @@ class Connection(QObject):
         if True:
             if self.readState == self.states.readSize:
                 if len(self.socket_buffer) >= TCP_MESSAGE_HEADER_SIZE:
-                    self.debug_string = retrieve_data(DEBUG_STRING_SIZE)
                     self.content_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                     self.cbor2_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                     self.binary_data_size = int.from_bytes(retrieve_data(INT_SIZE), 'big')
                     self.readState = self.states.readData
-                    print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer), self.debug_string)
+                    print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer))
                     # print('size read', self.content_data_size)
                 else:
                     pass
