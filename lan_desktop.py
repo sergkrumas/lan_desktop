@@ -758,7 +758,6 @@ class Portal(QWidget):
             if event.button() == Qt.LeftButton:
                 self.start_canvas_origin = QPointF(self.canvas_origin)
                 self.ocp = event.pos()
-                chat_dialog.appendSystemMessage('press')                
                 self.update()
 
         elif self.isViewportReadyAndCursorInsideViewport():
@@ -1608,7 +1607,7 @@ class ChatDialog(QDialog):
         aboutMenu = self.menuBar.addMenu('About')
 
         about_action = QAction('Application page on Github', self)
-        about_action.triggered.connect(self.go_to_app_page)        
+        about_action.triggered.connect(self.go_to_app_page)
         aboutMenu.addAction(about_action)
 
         main_layout = QVBoxLayout()
@@ -1694,6 +1693,10 @@ class ChatDialog(QDialog):
         self.wakeOnLanButton.clicked.connect(self.do_wake_on_lan)
         hor_layout.addWidget(self.wakeOnLanButton)
 
+        self.testButton = QPushButton('Test')
+        self.testButton.clicked.connect(self.testButtonHandler)
+        hor_layout.addWidget(self.testButton)
+
         self.portal_widget = Portal(self)
         self.portal_widget.resize(1200, 1000)
 
@@ -1745,6 +1748,9 @@ class ChatDialog(QDialog):
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
+
+    def testButtonHandler(self):
+        pass
 
     def print_to_chat(self, *args):
         self.appendSystemMessage(*args)
