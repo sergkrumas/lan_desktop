@@ -101,6 +101,11 @@ class Globals():
         return cls.writing_framerate
 
 
+    file_sending_timers = []
+
+
+
+
 def print(*args, **kwargs):
     if Globals.ENABLE_PRINT:
         builtins.print(*args, **kwargs)
@@ -845,12 +850,12 @@ class DataType:
     FileData = 7
 
 
-send_timers = []
+
 
 class SendTimer(QTimer):
     def __init__(self, filepath):
         super().__init__()
-        send_timers.append(self)
+        Globals.file_sending_timers.append(self)
         self.CHUNK_SIZE = 200000
         self.fileobj = open(filepath, 'rb')
         self.fileobj.seek(0, 2) # move the cursor to the end of the file
@@ -895,8 +900,8 @@ class SendTimer(QTimer):
 
         else:
             self.stop()
-            if self in send_timers:
-                send_timers.remove(self)
+            if self in Globals.file_sending_timers:
+                Globals.file_sending_timers.remove(self)
 
 def send_files(paths):
     for path in paths:
