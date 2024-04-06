@@ -111,7 +111,6 @@ PongTimeout = 260 * 1000
 PingInterval = 40
 
 
-viewer_portal = None
 keys_log_viewer = None
 capture_zone_widget_window = None
 
@@ -703,10 +702,6 @@ class Portal(QWidget):
 
         return image_rect
 
-    def closeEvent(self, event):
-        global viewer_portal
-        viewer_portal = None
-
     def mouseTimerHandler(self):
         if not self.editing_mode:
             # передавать данные из mouseMoveEvent нельзя,
@@ -830,19 +825,17 @@ class Portal(QWidget):
 
 def show_capture_window(image, capture_rect, connection):
 
-    global viewer_portal
+    portal = chat_dialog.portal_widget
 
-    viewer_portal = chat_dialog.portal_widget
-
-    viewer_portal.image_to_show = image
-    viewer_portal.capture_rect = capture_rect
-    viewer_portal.connection = connection
+    portal.image_to_show = image
+    portal.capture_rect = capture_rect
+    portal.connection = connection
     address = connection.socket.peerAddress().toString()
     title = f'Viewport for {address}'
-    viewer_portal.update_timestamp = time.time()
-    viewer_portal.is_grayed = False
-    viewer_portal.activated = True
-    viewer_portal.update()
+    portal.update_timestamp = time.time()
+    portal.is_grayed = False
+    portal.activated = True
+    portal.update()
 
 class DataType:
     PlainText = 0
