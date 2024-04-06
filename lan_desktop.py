@@ -146,7 +146,7 @@ class DataType:
     FileData = 12
 
     ControlFPS = 20
-    ControlCustomCapture = 21
+    ControlUserDefinedCaptureRect = 21
 
 
 
@@ -733,7 +733,7 @@ class Portal(QWidget):
             client_screen_rect = self.mapFromCanvasToClientScreen(crr)
             csr = client_screen_rect
             text = f'canvas rect: {crr.width()}x{crr.height()}\nclient screen rect: {csr.width()}x{csr.height()}'
-
+            text += '\nEnter or Return - set user-defined capture region to remote computer and leave portal editing mode'
             align = Qt.AlignLeft | Qt.AlignBottom
             r = painter.boundingRect(QRect(), align, text)
             r.moveBottomLeft(self.mapToViewport(crr.bottomRight()).toPoint() + QPoint(5, -5))
@@ -1096,7 +1096,13 @@ class Portal(QWidget):
 
     def keyReleaseEvent(self, event):
         if self.editing_mode:
-            pass
+            if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
+                if self.user_defined_capture_rect is not None:
+                    rect = self.mapFromCanvasToClientScreen(self.user_defined_capture_rect.toRect())
+                    self.connection.sendControlUserDefinedCaptureRect(rect)
+                    self.editing_mode = False
+                else:
+                    chat_dialog.appendSystemMessage('You haven\'t defined the capture area!')
         else:
             key_name_attr = self.key_attr_names.get(event.key(), None)
             self.addToKeysLog('up', key_name_attr)
@@ -1399,6 +1405,11 @@ class Connection(QObject):
                                     chat_dialog.appendSystemMessage(f'Remote host wants {fps} FPS')
                                     self.screenshotTimer.setInterval(int(1000/fps))
 
+                                elif self.currentDataType == DataType.ControlUserDefinedCaptureRect:
+                                    rect = value['rect']
+                                    rect = QRect(*rect)
+                                    chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
+
                                 else:
                                     chat_dialog.appendSystemMessage('Пришла какая-то непонятная хуйня')
 
@@ -1476,6 +1487,11 @@ class Connection(QObject):
 
     def sendControlFPS(self, value):
         data = prepare_data_to_write({DataType.ControlFPS: {'fps': value}}, None)
+        self.socket.write(data)
+
+    def sendControlUserDefinedCaptureRect(self, rect_value):
+        rect_tuple = (rect_value.left(), rect_value.top(), rect_value.width(), rect_value.height())
+        data = prepare_data_to_write({DataType.ControlUserDefinedCaptureRect: {'rect': rect_tuple}}, None)
         self.socket.write(data)
 
 def find_mac_for_local_socket_addr(local_address_string):
