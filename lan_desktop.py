@@ -67,10 +67,11 @@ class Globals():
     BROADCASTINTERVAL = 2000
     BROADCASTPORT = 45000
 
+    SCREENSHOT_SENDING_INTERVAL = 40 # for 25 FPS
+
 
     VERSION_INFO = "v0.1"
     AUTHOR_INFO = "by Sergei Krumas"
-
 
     IMAGE_FORMAT = 'jpg'
     peers_list_filename = f'peers_list_{platform.system()}.list'
@@ -111,7 +112,7 @@ def print(*args, **kwargs):
         builtins.print(*args, **kwargs)
 
 
-PingInterval = 40
+
 
 
 keys_log_viewer = None
@@ -978,7 +979,7 @@ class Connection(QObject):
 
         self.buffer = ''
 
-        self.screenshotTimer.setInterval(PingInterval)
+        self.screenshotTimer.setInterval(Globals.SCREENSHOT_SENDING_INTERVAL)
         self.currentDataType = DataType.Undefined
         self.isGreetingMessageSent = False
 
