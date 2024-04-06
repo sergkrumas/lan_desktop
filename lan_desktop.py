@@ -283,10 +283,6 @@ def hide_user_defined_capture_widget():
         capture_zone_widget_window.hide()
 
 
-def quit_app():
-    app = QApplication.instance()
-    app.quit()
-
 
 
 def draw_key_log(self, painter):
@@ -1917,11 +1913,15 @@ class ChatDialog(QDialog):
         #     QMessageBox.information(self, "Chat", "Launch several instances of this program on your local network and start chatting!")
     def closeEvent(self, event):
         # не совсем корректно, но пока так оставлю
-        quit_app()
+        self.quit_app()
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            quit_app()
+            self.quit_app()
+
+    def quit_app(self):
+        app = QApplication.instance()
+        app.quit()
 
     def dragEnterEvent(self, event):
         mime_data = event.mimeData()
