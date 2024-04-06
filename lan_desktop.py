@@ -113,7 +113,15 @@ def print(*args, **kwargs):
     if Globals.ENABLE_PRINT:
         builtins.print(*args, **kwargs)
 
+class DataType:
+    Undefined = 0
 
+    PlainText = 1
+    Greeting = 2
+
+    MouseData = 10
+    KeyboardData = 11
+    FileData = 12
 
 
 
@@ -832,14 +840,7 @@ def show_capture_window(image, capture_rect, connection):
     portal.activated = True
     portal.update()
 
-class DataType:
-    PlainText = 0
 
-    Greeting = 3
-    Undefined = 4
-    MouseData = 5
-    KeyboardData = 6
-    FileData = 7
 
 
 
