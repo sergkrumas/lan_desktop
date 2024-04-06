@@ -387,7 +387,6 @@ class Portal(QWidget):
         self.editing_mode = False
         self.show_log_keys = False
 
-        self.canvas_origin = QPoint(0, 0)
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0
 
@@ -424,6 +423,7 @@ class Portal(QWidget):
         self.update_timer.start()
 
         self.menuBar = QMenuBar(self)
+        self.canvas_origin = QPoint(0, self.menuBar.height())
 
         keyboard_send_actions_data = (
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
