@@ -820,14 +820,20 @@ class Portal(QWidget):
             self.triggerKeyTranslationError()
 
     def keyPressEvent(self, event):
-        key_name_attr = self.key_attr_names.get(event.key(), None)
-        self.addToKeysLog('down', key_name_attr)
-        self.sendKeyData(event, 'keyDown')
+        if self.editing_mode:
+            pass
+        else:
+            key_name_attr = self.key_attr_names.get(event.key(), None)
+            self.addToKeysLog('down', key_name_attr)
+            self.sendKeyData(event, 'keyDown')
 
     def keyReleaseEvent(self, event):
-        key_name_attr = self.key_attr_names.get(event.key(), None)
-        self.addToKeysLog('up', key_name_attr)
-        self.sendKeyData(event, 'keyUp')
+        if self.editing_mode:
+            pass
+        else:
+            key_name_attr = self.key_attr_names.get(event.key(), None)
+            self.addToKeysLog('up', key_name_attr)
+            self.sendKeyData(event, 'keyUp')
 
 def show_capture_window(image, capture_rect, connection):
 
