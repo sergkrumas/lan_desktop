@@ -729,14 +729,15 @@ class Portal(QWidget):
     def draw_user_defined_capture_zone_info(self, painter):
         if self.user_defined_capture_rect:
             painter.save()
-            pos = self.mapToViewport(self.user_defined_capture_rect.bottomRight())
             crr = self.user_defined_capture_rect.toRect()
-
             client_screen_rect = self.mapFromCanvasToClientScreen(crr)
             csr = client_screen_rect
-            text = f'canvas rect: {crr.width()}x{crr.height()}; client screen rect: {csr.width()}x{csr.height()}'
-            pos += QPoint(5, -5)
-            painter.drawText(pos, text)
+            text = f'canvas rect: {crr.width()}x{crr.height()}\nclient screen rect: {csr.width()}x{csr.height()}'
+
+            align = Qt.AlignLeft | Qt.AlignBottom
+            r = painter.boundingRect(QRect(), align, text)
+            r.moveBottomLeft(self.mapToViewport(crr.bottomRight()).toPoint() + QPoint(5, -5))
+            painter.drawText(r, align, text)
             painter.restore()
 
     def mapFromCanvasToClientScreen(self, canvas_rect):
