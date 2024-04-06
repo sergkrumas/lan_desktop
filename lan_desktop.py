@@ -106,8 +106,6 @@ def print(*args, **kwargs):
         builtins.print(*args, **kwargs)
 
 
-PongTimeout = 260 * 1000
-
 PingInterval = 40
 
 
@@ -1179,9 +1177,6 @@ class Connection(QObject):
             self.socket.readyRead.emit()
 
     def sendPing(self):
-        # if self.pongTime.elapsed() > PongTimeout:
-            # self.abort()
-            # return
 
         if chat_dialog.remote_control_chb.isChecked():
             capture_index = chat_dialog.retrieve_capture_index()
@@ -1194,11 +1189,6 @@ class Connection(QObject):
             value = Globals.calculate_writing_framerate()
             text = f'sending picture framerate: {value}'
             chat_dialog.framerate_label.setText(text)
-
-        else:
-            pass
-            # print('send ping')
-            # self.socket.write(prepare_data_to_write({DataType.Ping: ''}, None))
 
     def sendGreetingMessage(self):
         peer_address_string = self.socket.peerAddress().toString()
