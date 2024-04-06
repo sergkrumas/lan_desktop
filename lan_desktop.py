@@ -918,7 +918,12 @@ class Portal(QWidget):
 
     def mouseMoveEvent(self, event):
         alt = event.modifiers() & Qt.AltModifier
+
+        if not self.editing_mode:
+            self.setCursor(Qt.ArrowCursor)
+
         if self.editing_mode:
+            self.get_region_info()
             if event.buttons() == Qt.LeftButton:
 
                 if not self.is_rect_defined:
