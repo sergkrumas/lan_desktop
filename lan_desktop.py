@@ -1746,6 +1746,8 @@ class ChatDialog(QDialog):
 
         self.resize(1920, 1080)
 
+        self.split_sizes = []
+
         rect = self.frameGeometry()
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
@@ -1753,7 +1755,11 @@ class ChatDialog(QDialog):
     def testButtonHandler(self):
         sizes = self.splt.sizes()
         self.appendSystemMessage(str(sizes))
-        sizes[1] = 0
+        if sizes[1] == 0:
+            sizes = self.split_sizes[:]
+        else:
+            self.split_sizes = sizes[:]
+            sizes[1] = 0
         self.splt.setSizes(sizes)
 
     def print_to_chat(self, *args):
