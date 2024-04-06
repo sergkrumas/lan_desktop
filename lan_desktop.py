@@ -143,6 +143,9 @@ class DataType:
     KeyboardData = 11
     FileData = 12
 
+    ControlFPS = 20
+    ControlCustomCapture = 21
+
 
 
 capture_zone_widget_window = None
@@ -436,6 +439,16 @@ class Portal(QWidget):
         action.setChecked(self.show_log_keys)
         action.triggered.connect(partial(toggle_, self, 'show_log_keys'))
         viewMenu.addAction(action)
+
+        def send_contol_fps(value):
+            if self.connection:
+                self.connection.sendControlFPS(value)
+                chat_dialog.appendSystemMessage(f'FPS is set to {value}')
+
+        for fps_value in [25, 20, 15, 10, 5, 1, 0.5]:
+            set_fps_action = QAction(f'Set FPS to {fps_value}', self)
+            set_fps_action.triggered.connect(partial(send_contol_fps, fps_value))
+            viewMenu.addAction(set_fps_action)
 
         toggle_editing_mode = QAction('Editing Mode', self)
         toggle_editing_mode.setCheckable(True)
@@ -1115,8 +1128,15 @@ class Connection(QObject):
                                 elif self.currentDataType == DataType.FileData:
                                     file_chunk_info = value
 
+
+                                elif self.currentDataType == DataType.ControlFPS:
+                                    fps = value['fps']
+                                    chat_dialog.appendSystemMessage(f'Remote host wants {fps} FPS')
+                                    self.screenshotTimer.setInterval(int(1000/fps))
+
                                 else:
-                                    self.newMessage.emit('System', 'пришла какая-то непонятная хуйня')
+                                    chat_dialog.appendSystemMessage('Пришла какая-то непонятная хуйня')
+
 
                             else:
                                 print(parsed_data)
@@ -1189,6 +1209,9 @@ class Connection(QObject):
         )
         self.isGreetingMessageSent = True
 
+    def sendControlFPS(self, value):
+        data = prepare_data_to_write({DataType.ControlFPS: {'fps': value}}, None)
+        self.socket.write(data)
 
 def find_mac_for_local_socket_addr(local_address_string):
     for ip_addr, mac in retreive_ip_mac_pairs():
