@@ -722,8 +722,30 @@ class Portal(QWidget):
 
             cursor_pos = self.mapFromGlobal(QCursor().pos())
             self.draw_vertical_horizontal_lines(painter, cursor_pos)
+            self.draw_user_defined_capture_zone_info(painter)
 
         painter.end()
+
+    def draw_user_defined_capture_zone_info(self, painter):
+        if self.capture_region_rect:
+            painter.save()
+            pos = self.mapToViewport(self.capture_region_rect.bottomRight())
+            crr = self.capture_region_rect.toRect()
+
+            client_screen_rect = self.mapFromCanvasToClientScreen(crr)
+            csr = client_screen_rect
+            text = f'canvas rect: {crr.width()}x{crr.height()}; client screen rect: {csr.width()}x{csr.height()}'
+            pos += QPoint(5, -5)
+            painter.drawText(pos, text)
+            painter.restore()
+
+    def mapFromCanvasToClientScreen(self, canvas_rect):
+        offset = self.capture_rect.topLeft()
+        out = QRect(
+            canvas_rect.topLeft() + offset,
+            canvas_rect.bottomRight() + offset,
+        )
+        return out
 
     def draw_vertical_horizontal_lines(self, painter, cursor_pos):
         painter.save()
@@ -756,7 +778,6 @@ class Portal(QWidget):
             painter.drawLine(pos_x, 0, pos_x, self.height())
             painter.drawLine(0, pos_y, self.width(), pos_y)
         painter.restore()
-
 
     def get_viewport_rect(self):
         image_rect = self.image_to_show.rect()
