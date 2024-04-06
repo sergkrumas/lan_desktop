@@ -712,7 +712,7 @@ class Portal(QWidget):
 
         else:
             painter.fillRect(self.rect(), QColor(20, 20, 20, 255))
-            self.drawMessageInCenter(painter, 'Портал неактивен')
+            self.drawMessageInCenter(painter, 'Portal is off')
 
         if self.editing_mode:
             painter.setPen(QPen(QColor(255, 50, 50), 3, Qt.DotLine))
