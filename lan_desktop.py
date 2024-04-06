@@ -80,6 +80,7 @@ class Globals():
     IMAGE_FORMAT = 'jpg'
     peers_list_filename = f'peers_list_{platform.system()}.list'
 
+    client_keys_logger = None
 
     last_reading = None
     last_writing = None
@@ -105,7 +106,8 @@ class Globals():
         cls.last_writing = time.time()
         return cls.writing_framerate
 
-    def read_peers_list():
+    @classmethod
+    def read_peers_list(cls):
         data = None
         if os.path.exists(Globals.peers_list_filename):
             with open(Globals.peers_list_filename, 'r', encoding='utf8') as file:
@@ -117,8 +119,9 @@ class Globals():
             data_dict = json.loads(data)
         return data_dict
 
-    def update_peers_list(addr, port, mac):
-        data_dict = read_peers_list()
+    @classmethod
+    def update_peers_list(cls, addr, port, mac):
+        data_dict = cls.read_peers_list()
         data_dict.update({addr: mac})
         data = json.dumps(data_dict)
         with open(Globals.peers_list_filename, 'w+', encoding='utf8') as file:
@@ -142,7 +145,6 @@ class DataType:
 
 
 
-keys_log_viewer = None
 capture_zone_widget_window = None
 
 
@@ -346,19 +348,18 @@ class TransparentWidget(QWidget):
 def show_screencast_keys_window(status, key_name):
 
     if chat_dialog.show_log_keys_chb.isChecked():
-        global keys_log_viewer
-        if keys_log_viewer is None:
-            keys_log_viewer = TransparentWidget()
-            keys_log_viewer.resize(400, 800)
-            keys_log_viewer.show()
-            rect = keys_log_viewer.geometry()
+        if Globals.client_keys_logger is None:
+            Globals.client_keys_logger = TransparentWidget()
+            Globals.client_keys_logger.resize(400, 800)
+            Globals.client_keys_logger.show()
+            rect = Globals.client_keys_logger.geometry()
             desktop_widget = QDesktopWidget()
             # кладём окно аккурат над кнопкой «Пуск»
             rect.moveBottomLeft(desktop_widget.availableGeometry().bottomLeft())
-            keys_log_viewer.setGeometry(rect)
+            Globals.client_keys_logger.setGeometry(rect)
 
-        keys_log_viewer.addToKeysLog(status, key_name)
-        keys_log_viewer.update()
+        Globals.client_keys_logger.addToKeysLog(status, key_name)
+        Globals.client_keys_logger.update()
 
 
 
@@ -1648,9 +1649,8 @@ class ChatDialog(QDialog):
         def trigger_show_log_keys_chb():
             self.show_log_keys = not self.show_log_keys
             if not self.show_log_keys:
-                global keys_log_viewer
-                if keys_log_viewer is not None:
-                    keys_log_viewer.hide()
+                if Globals.client_keys_logger is not None:
+                    Globals.client_keys_logger.hide()
 
         self.show_log_keys_chb.setChecked(self.show_log_keys)
         self.show_log_keys_chb.stateChanged.connect(trigger_show_log_keys_chb)
