@@ -107,9 +107,7 @@ def print(*args, **kwargs):
 
 
 PongTimeout = 260 * 1000
-PingInterval = 5 * 1000
 
-# PingInterval = 1 * 1000
 PingInterval = 40
 
 
