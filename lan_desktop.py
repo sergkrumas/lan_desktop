@@ -648,8 +648,8 @@ class Portal(QWidget):
 
 
         if self.activated:
-            SPAN = 2 #seconds
-            if time.time() - self.update_timestamp > SPAN:
+            WAIT_FOR_SCREENSHOT_SECONDS = 3 #seconds
+            if time.time() - self.update_timestamp > WAIT_FOR_SCREENSHOT_SECONDS:
                 self.gray_received_image()
 
             if self.image_to_show is not None:
@@ -760,7 +760,6 @@ class Portal(QWidget):
             if event.buttons() == Qt.LeftButton:
                 delta = QPoint(event.pos() - self.ocp)
                 self.canvas_origin = self.start_canvas_origin + delta
-                chat_dialog.appendSystemMessage('move')
 
         self.update()
 
