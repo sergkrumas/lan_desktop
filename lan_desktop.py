@@ -396,7 +396,7 @@ class Portal(QWidget):
 
         self.input_POINT1 = None
         self.input_POINT2 = None
-        self.capture_region_rect = None
+        self.user_defined_capture_rect = None
 
         self.user_input_started = False
         self.is_rect_defined = False
@@ -727,10 +727,10 @@ class Portal(QWidget):
         painter.end()
 
     def draw_user_defined_capture_zone_info(self, painter):
-        if self.capture_region_rect:
+        if self.user_defined_capture_rect:
             painter.save()
-            pos = self.mapToViewport(self.capture_region_rect.bottomRight())
-            crr = self.capture_region_rect.toRect()
+            pos = self.mapToViewport(self.user_defined_capture_rect.bottomRight())
+            crr = self.user_defined_capture_rect.toRect()
 
             client_screen_rect = self.mapFromCanvasToClientScreen(crr)
             csr = client_screen_rect
@@ -740,7 +740,7 @@ class Portal(QWidget):
             painter.restore()
 
     def mapFromCanvasToClientScreen(self, canvas_rect):
-        offset = self.capture_rect.topLeft()
+        offset = self.monitor_capture_rect.topLeft()
         out = QRect(
             canvas_rect.topLeft() + offset,
             canvas_rect.bottomRight() + offset,
@@ -814,14 +814,14 @@ class Portal(QWidget):
         norm_y = viewport_pos.y() / viewport_rect.height()
         # print(viewport_pos, norm_x, norm_y)
 
-        x = int(norm_x*self.capture_rect.width()) + self.capture_rect.left()
-        y = int(norm_y*self.capture_rect.height()) + self.capture_rect.top()
+        x = int(norm_x*self.monitor_capture_rect.width()) + self.monitor_capture_rect.left()
+        y = int(norm_y*self.monitor_capture_rect.height()) + self.monitor_capture_rect.top()
 
         return x, y
 
     def define_regions_rects_and_set_cursor(self, write_data=True):
 
-        if not self.capture_region_rect:
+        if not self.user_defined_capture_rect:
             self.setCursor(Qt.ArrowCursor)
             return
 
@@ -859,7 +859,7 @@ class Portal(QWidget):
             9: QCursor(Qt.SizeFDiagCursor)
         }
 
-        crr = self.mapToViewportRectF(self.capture_region_rect)
+        crr = self.mapToViewportRectF(self.user_defined_capture_rect)
         # amr = self._all_monitors_rect
         amr = self.rect()
         regions = {
@@ -973,8 +973,8 @@ class Portal(QWidget):
                     set_func_attr = self.undermouse_region_info.setter
                     data_id = self.undermouse_region_info.coords
                     get_func_attr = self.undermouse_region_info.getter
-                    get_func = getattr(self.capture_region_rect, get_func_attr)
-                    set_func = getattr(self.capture_region_rect, set_func_attr)
+                    get_func = getattr(self.user_defined_capture_rect, get_func_attr)
+                    set_func = getattr(self.user_defined_capture_rect, set_func_attr)
                     if self.capture_redefine_start_value is None:
                         self.capture_redefine_start_value = get_func()
                     if data_id == "x":
@@ -985,12 +985,12 @@ class Portal(QWidget):
                         set_func(self.capture_redefine_start_value + delta)
 
                     # необходимо для нормальной работы
-                    self.capture_region_rect = build_valid_rectF(
-                        self.capture_region_rect.topLeft(), self.capture_region_rect.bottomRight()
+                    self.user_defined_capture_rect = build_valid_rectF(
+                        self.user_defined_capture_rect.topLeft(), self.user_defined_capture_rect.bottomRight()
                     )
 
-                    self.input_POINT1 = self.capture_region_rect.topLeft()
-                    self.input_POINT2 = self.capture_region_rect.bottomRight()
+                    self.input_POINT1 = self.user_defined_capture_rect.topLeft()
+                    self.input_POINT2 = self.user_defined_capture_rect.bottomRight()
 
             if event.buttons() == Qt.MiddleButton:
                 delta = QPoint(event.pos() - self.ocp)
@@ -1008,7 +1008,7 @@ class Portal(QWidget):
                 self.get_region_info()
                 if self.undermouse_region_info is None:
                     self.drag_inside_capture_zone = True
-                    if self.capture_region_rect:
+                    if self.user_defined_capture_rect:
                         self.elementsMousePressEvent(event)
                 else:
                     self.drag_inside_capture_zone = False
@@ -1046,7 +1046,7 @@ class Portal(QWidget):
                         self.input_POINT2 = None
                         return
                     self.is_rect_defined = True
-                    self.capture_region_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+                    self.user_defined_capture_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
                     self.is_rect_being_redefined = False
                 self.get_region_info() # здесь только для установки курсора
 
@@ -1101,12 +1101,12 @@ class Portal(QWidget):
             self.addToKeysLog('up', key_name_attr)
             self.sendKeyData(event, 'keyUp')
 
-def show_capture_window(image, capture_rect, connection):
+def show_capture_window(image, monitor_capture_rect, connection):
 
     portal = chat_dialog.portal_widget
 
     portal.image_to_show = image
-    portal.capture_rect = capture_rect
+    portal.monitor_capture_rect = monitor_capture_rect
     portal.connection = connection
     address = connection.socket.peerAddress().toString()
     title = f'Viewport for {address}'
