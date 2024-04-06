@@ -62,6 +62,11 @@ except:
 class Globals():
 
     DEBUG = True
+    ENABLE_PRINT = False
+
+    BROADCASTINTERVAL = 2000
+    BROADCASTPORT = 45000
+
 
     VERSION_INFO = "v0.1"
     AUTHOR_INFO = "by Sergei Krumas"
@@ -95,11 +100,9 @@ class Globals():
         cls.last_writing = time.time()
         return cls.writing_framerate
 
-    enable_print = False
-
 
 def print(*args, **kwargs):
-    if Globals.enable_print:
+    if Globals.ENABLE_PRINT:
         builtins.print(*args, **kwargs)
 
 
@@ -108,10 +111,6 @@ PingInterval = 5 * 1000
 
 # PingInterval = 1 * 1000
 PingInterval = 40
-
-
-BROADCASTINTERVAL = 2000
-BROADCASTPORT = 45000
 
 
 viewer_portal = None
@@ -1417,10 +1416,10 @@ class PeerManager(QObject):
 
         self.updateAddresses()
 
-        self.broadcastSocket.bind(QHostAddress.Any, BROADCASTPORT, QUdpSocket.ShareAddress | QUdpSocket.ReuseAddressHint)
+        self.broadcastSocket.bind(QHostAddress.Any, Globals.BROADCASTPORT, QUdpSocket.ShareAddress | QUdpSocket.ReuseAddressHint)
         self.broadcastSocket.readyRead.connect(self.readBroadcastDatagram)
 
-        self.broadcastTimer.setInterval(BROADCASTINTERVAL);
+        self.broadcastTimer.setInterval(Globals.BROADCASTINTERVAL);
         self.broadcastTimer.timeout.connect(self.sendBroadcastDatagram)
 
         self.socket_buffer = bytes()
@@ -1509,7 +1508,7 @@ class PeerManager(QObject):
         validBroadcastAddresses = True
 
         for address in self.broadcastAddresses[:]:
-            if self.broadcastSocket.writeDatagram(datagram, address, BROADCASTPORT) == -1:
+            if self.broadcastSocket.writeDatagram(datagram, address, Globals.BROADCASTPORT) == -1:
                 validBroadcastAddresses = False
 
         if not validBroadcastAddresses:
@@ -1671,12 +1670,12 @@ class ChatDialog(QDialog):
         self.remote_control_chb = QCheckBox('Allow Remote Control')
         hor_layout.addWidget(self.remote_control_chb)
 
-        self.enable_print = QCheckBox('Console output')
-        hor_layout.addWidget(self.enable_print)
+        self.ENABLE_PRINT = QCheckBox('Console output')
+        hor_layout.addWidget(self.ENABLE_PRINT)
         def trigger_console_output_chb():
-            Globals.enable_print = self.enable_print.isChecked()
-        self.enable_print.stateChanged.connect(trigger_console_output_chb)
-        self.enable_print.setChecked(False)
+            Globals.ENABLE_PRINT = self.ENABLE_PRINT.isChecked()
+        self.ENABLE_PRINT.stateChanged.connect(trigger_console_output_chb)
+        self.ENABLE_PRINT.setChecked(False)
 
         self.show_log_keys_chb = QCheckBox('Show keys log')
         hor_layout.addWidget(self.show_log_keys_chb)
