@@ -1505,7 +1505,6 @@ class Connection(QObject):
     def sendScreenshot(self):
 
         if chat_dialog.remote_control_chb.isChecked():
-            capture_index = chat_dialog.retrieve_capture_index()
             data = prepare_screenshot_to_transfer(self.capture_index, self)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
@@ -2000,30 +1999,6 @@ class ChatDialog(QDialog):
         self.show_log_keys_chb.stateChanged.connect(trigger_show_log_keys_chb)
 
 
-        self.capture_combobox = QComboBox()
-
-        nameLb  = QLabel("Capture region:", self)
-        desktop = QDesktopWidget()
-        self.capture_combobox.addItem('User-defined region', -2)
-        hor_layout.addWidget(nameLb)
-        nameLb.setBuddy(self.capture_combobox)
-
-        self.capture_combobox.addItem('All monitors', -1)
-        for i in range(0, desktop.screenCount()):
-            self.capture_combobox.addItem(f'Monitor {i+1}', i)
-        # по дефолту выдаём содержимое первого монитора
-        self.capture_combobox.setCurrentIndex(1)
-
-
-        def capture_combobox_handler():
-            if self.retrieve_capture_index() == -2 and self.remote_control_chb:
-                show_user_defined_capture_widget()
-            else:
-                hide_user_defined_capture_widget()
-
-        self.capture_combobox.currentIndexChanged.connect(capture_combobox_handler)
-
-        hor_layout.addWidget(self.capture_combobox, Qt.AlignLeft)
         main_layout.addLayout(hor_layout)
 
         self.framerate_label = QLabel()
@@ -2143,11 +2118,6 @@ class ChatDialog(QDialog):
                 self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}')
                 return
         self.appendSystemMessage(f'WakeOnLAN: no any peer selected')
-
-    def retrieve_capture_index(self):
-        index = self.capture_combobox.currentIndex()
-        data = self.capture_combobox.itemData(index)
-        return data
 
     def appendMessage(self, _from, message):
         if (not _from) or (not message):
