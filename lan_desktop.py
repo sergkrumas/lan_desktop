@@ -1536,10 +1536,10 @@ class Connection(QObject):
                                     capture_index = value
                                     count = len(QGuiApplication.screens())
                                     if capture_index > count-1:
-                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen with index {capture_index}, BUT THERE ARE ONLY {count} SCREENS!')
+                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}, BUT THERE ARE ONLY {count} SCREENS!')
                                     else:
                                         self.capture_index = capture_index
-                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen with index {capture_index}')
+                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}')
 
                                 else:
                                     chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня {parsed_data}')
