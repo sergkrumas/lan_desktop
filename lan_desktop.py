@@ -700,10 +700,13 @@ class Portal(QWidget):
 
                 if self.user_defined_image_to_show:
                     client_screen_rect = self.user_defined_capture_rect.toRect()
-                    painter.drawImage(self.get_viewport_rect(sub=True),
+                    sub_viewport_rect = self.get_viewport_rect(sub=True)
+                    painter.drawImage(sub_viewport_rect,
                         self.user_defined_image_to_show,
                         self.user_defined_image_to_show.rect()
                     )
+                    painter.setPen(Qt.red)
+                    painter.drawRect(sub_viewport_rect)
 
             if self.disconnect:
 
