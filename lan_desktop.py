@@ -46,8 +46,6 @@ from wakeonlan import send_magic_packet
 
 
 
-from _resizable_frameless_modificated import ResizableWidgetWindow
-
 from _utils import (fit_rect_into_rect, build_valid_rectF)
 from update import do_update
 
@@ -279,19 +277,6 @@ def prepare_screenshot_to_transfer(capture_index, connection):
 
     return prepare_data_to_write(serial_data, byte_array.data())
 
-
-def show_user_defined_capture_widget():
-    global capture_zone_widget_window
-    if capture_zone_widget_window is None:
-        capture_zone_widget_window = ResizableWidgetWindow()
-        capture_zone_widget_window.show()
-        capture_zone_widget_window.resize(240, 160)
-    capture_zone_widget_window.show()
-
-def hide_user_defined_capture_widget():
-    global capture_zone_widget_window
-    if capture_zone_widget_window is not None:
-        capture_zone_widget_window.hide()
 
 
 
