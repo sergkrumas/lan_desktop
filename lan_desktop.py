@@ -149,7 +149,6 @@ class DataType:
     ControlUserDefinedCaptureRect = 21
 
 
-
 capture_zone_widget_window = None
 
 
@@ -255,10 +254,11 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
 
 
 
-def prepare_screenshot_to_transfer(capture_index):
+def prepare_screenshot_to_transfer(capture_index, connection):
 
     if capture_index == -2:
-        capture_rect = capture_zone_widget_window.geometry()
+
+        capture_rect = connection.user_defined_capture_rect
         image = make_user_defined_capture_screenshot(capture_rect)
     else:
         image, capture_rect = make_capture_frame(capture_index)
@@ -270,10 +270,14 @@ def prepare_screenshot_to_transfer(capture_index):
     # image.save(buffer, "jpg")
     image.save(buffer, Globals.IMAGE_FORMAT, quality=50)
 
-
     capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.width(), capture_rect.height()]
 
-    return prepare_data_to_write(capture_rect_tuple, byte_array.data())
+    serial_data = [{
+        'rect': capture_rect_tuple,
+        'capture_index': capture_index,
+    }]
+
+    return prepare_data_to_write(serial_data, byte_array.data())
 
 
 def show_user_defined_capture_widget():
@@ -386,6 +390,8 @@ class Portal(QWidget):
 
         self.editing_mode = False
         self.show_log_keys = False
+
+        self.disconnect = False
 
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0
@@ -666,6 +672,7 @@ class Portal(QWidget):
         if self.activated:
             WAIT_FOR_SCREENSHOT_SECONDS = 3 #seconds
             if time.time() - self.update_timestamp > WAIT_FOR_SCREENSHOT_SECONDS:
+                self.disconnect = True
                 self.gray_received_image()
 
             if self.image_to_show is not None:
@@ -680,7 +687,14 @@ class Portal(QWidget):
 
                 painter.drawImage(viewport_rect, self.image_to_show, image_rect)
 
-            if self.is_grayed:
+                if self.user_defined_image_to_show:
+                    client_screen_rect = self.user_defined_capture_rect.toRect()
+                    painter.drawImage(self.get_viewport_rect(sub=True),
+                        self.user_defined_image_to_show,
+                        self.user_defined_image_to_show.rect()
+                    )
+
+            if self.disconnect:
 
                 delta = int(time.time() - self.update_timestamp)
                 text = f'Ведомый компьютер недоступен уже {delta} секунд.\nСкорее всего, связь потеряна.'
@@ -780,12 +794,22 @@ class Portal(QWidget):
             painter.drawLine(0, pos_y, self.width(), pos_y)
         painter.restore()
 
-    def get_viewport_rect(self):
-        image_rect = self.image_to_show.rect()
+    def get_viewport_rect(self, sub=False):
+
+        if sub:
+            image_rect = self.user_defined_image_to_show.rect()
+        else:
+            image_rect = self.image_to_show.rect()
 
         image_rect.setWidth(int(image_rect.width()*self.canvas_scale_x))
         image_rect.setHeight(int(image_rect.height()*self.canvas_scale_y))
+
         canvas_origin = QPointF(self.canvas_origin).toPoint()
+        if sub:
+            delta = (self.monitor_capture_rect.topLeft() - self.user_defined_capture_rect.toRect().topLeft())
+            delta.setX(int(delta.x()*self.canvas_scale_x))
+            delta.setY(int(delta.y()*self.canvas_scale_y))
+            canvas_origin -= delta
         image_rect.moveTopLeft(canvas_origin)
 
         return image_rect
@@ -1108,17 +1132,22 @@ class Portal(QWidget):
             self.addToKeysLog('up', key_name_attr)
             self.sendKeyData(event, 'keyUp')
 
-def show_capture_window(image, monitor_capture_rect, connection):
+def show_in_portal(image, capture_index, monitor_capture_rect, connection):
 
     portal = chat_dialog.portal_widget
-
-    portal.image_to_show = image
-    portal.monitor_capture_rect = monitor_capture_rect
     portal.connection = connection
-    address = connection.socket.peerAddress().toString()
-    title = f'Viewport for {address}'
     portal.update_timestamp = time.time()
-    portal.is_grayed = False
+
+    if capture_index == -2:
+        portal.user_defined_image_to_show = image
+        portal.gray_received_image()
+    else:
+        portal.image_to_show = image
+        portal.user_defined_image_to_show = None
+        portal.monitor_capture_rect = monitor_capture_rect
+
+        portal.is_grayed = False
+
     portal.activated = True
     portal.update()
 
@@ -1269,6 +1298,14 @@ class Connection(QObject):
         self.cbor2_data_size = 0
         self.binary_data_size = 0
 
+        # -2 - user defined capture region
+        # -1 - all monitors
+        #  0 - first monitor
+        #  1 - second monitor
+        #  2 - third monitor etc
+        self.capture_index = 0
+        self.user_defined_capture_rect = None
+
     def name(self):
         return self.username
 
@@ -1321,7 +1358,7 @@ class Connection(QObject):
 
                     try:
 
-                        capture_rect_coords = None
+                        capture_rect_tuple = None
                         file_chunk_info = None
 
                         if cbor2_data:
@@ -1408,6 +1445,8 @@ class Connection(QObject):
                                 elif self.currentDataType == DataType.ControlUserDefinedCaptureRect:
                                     rect = value['rect']
                                     rect = QRect(*rect)
+                                    self.capture_index = -2
+                                    self.user_defined_capture_rect = rect
                                     chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
 
                                 else:
@@ -1416,17 +1455,21 @@ class Connection(QObject):
 
                             else:
                                 print(parsed_data)
-                                capture_rect_coords = parsed_data
+
+                                data_dict = parsed_data[0]
+
+                                capture_rect_tuple = data_dict.get('rect', None)
+                                capture_index = data_dict.get('capture_index', None)
 
                         if binary_data:
 
-                            if capture_rect_coords:
+                            if capture_rect_tuple:
                                 input_byte_array = QByteArray(binary_data)
                                 capture_image = QImage()
                                 capture_image.loadFromData(input_byte_array, Globals.IMAGE_FORMAT);
                                 print(f'recieved image, {len(binary_data)}, {capture_image.size()}')
 
-                                show_capture_window(capture_image, QRect(*capture_rect_coords), self)
+                                show_in_portal(capture_image, capture_index, QRect(*capture_rect_tuple), self)
 
 
                                 value = Globals.calculate_reading_framerate()
@@ -1463,7 +1506,7 @@ class Connection(QObject):
 
         if chat_dialog.remote_control_chb.isChecked():
             capture_index = chat_dialog.retrieve_capture_index()
-            data = prepare_screenshot_to_transfer(capture_index)
+            data = prepare_screenshot_to_transfer(self.capture_index, self)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
             self.socket.flush()
