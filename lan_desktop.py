@@ -961,6 +961,10 @@ class Portal(QWidget):
         viewport_pos = self.canvas_origin + scaled_rel_pos
         return viewport_pos
 
+    def move_capture_rect(self, delta):
+        self.user_defined_capture_rect.moveCenter(self.current_capture_zone_center + delta)
+        self.input_POINT1 = self.user_defined_capture_rect.topLeft()
+        self.input_POINT2 = self.user_defined_capture_rect.bottomRight()
 
     def mouseMoveEvent(self, event):
         alt = event.modifiers() & Qt.AltModifier
@@ -972,50 +976,56 @@ class Portal(QWidget):
             self.get_region_info()
             if event.buttons() == Qt.LeftButton:
 
-                if not self.is_rect_defined:
-                    # для первичного задания области захвата
-                    event_pos = self.mapToCanvas(event.pos())
-                    if not self.is_point_set(self.input_POINT1):
-                        self.user_input_started = True
-                        self.input_POINT1 = event_pos
-                    else:
-                        modifiers = event.modifiers()
-                        if modifiers == Qt.NoModifier:
-                            self.input_POINT2 = event_pos
+                if self.drag_capture_zone:
+                    delta = QPoint(event.pos() - self.ocp)
+                    delta = QPointF(delta.x()/self.canvas_scale_x, delta.y()/self.canvas_scale_y)
+                    self.move_capture_rect(delta.toPoint())
+
+                else:
+                    if not self.is_rect_defined:
+                        # для первичного задания области захвата
+                        event_pos = self.mapToCanvas(event.pos())
+                        if not self.is_point_set(self.input_POINT1):
+                            self.user_input_started = True
+                            self.input_POINT1 = event_pos
                         else:
-                            delta = self.input_POINT1 - event_pos
-                            if modifiers & Qt.ControlModifier:
-                                delta.setX(delta.x() // 10 * 10 + 1)
-                                delta.setY(delta.y() // 10 * 10 + 1)
-                            if modifiers & Qt.ShiftModifier:
-                                delta = self.equilateral_delta(delta)
-                            self.input_POINT2 = self.input_POINT1 - delta
+                            modifiers = event.modifiers()
+                            if modifiers == Qt.NoModifier:
+                                self.input_POINT2 = event_pos
+                            else:
+                                delta = self.input_POINT1 - event_pos
+                                if modifiers & Qt.ControlModifier:
+                                    delta.setX(delta.x() // 10 * 10 + 1)
+                                    delta.setY(delta.y() // 10 * 10 + 1)
+                                if modifiers & Qt.ShiftModifier:
+                                    delta = self.equilateral_delta(delta)
+                                self.input_POINT2 = self.input_POINT1 - delta
 
-                elif self.undermouse_region_info and not self.drag_inside_capture_zone:
-                    # для изменения области захвата после первичного задания
-                    self.is_rect_being_redefined = True
-                    delta = self.mapToCanvas(QPointF(event.pos())) - self.start_cursor_position
-                    set_func_attr = self.undermouse_region_info.setter
-                    data_id = self.undermouse_region_info.coords
-                    get_func_attr = self.undermouse_region_info.getter
-                    get_func = getattr(self.user_defined_capture_rect, get_func_attr)
-                    set_func = getattr(self.user_defined_capture_rect, set_func_attr)
-                    if self.capture_redefine_start_value is None:
-                        self.capture_redefine_start_value = get_func()
-                    if data_id == "x":
-                        set_func(self.capture_redefine_start_value + delta.x())
-                    if data_id == "y":
-                        set_func(self.capture_redefine_start_value + delta.y())
-                    if data_id == "xy":
-                        set_func(self.capture_redefine_start_value + delta)
+                    elif self.undermouse_region_info and not self.drag_inside_capture_zone:
+                        # для изменения области захвата после первичного задания
+                        self.is_rect_being_redefined = True
+                        delta = self.mapToCanvas(QPointF(event.pos())) - self.start_cursor_position
+                        set_func_attr = self.undermouse_region_info.setter
+                        data_id = self.undermouse_region_info.coords
+                        get_func_attr = self.undermouse_region_info.getter
+                        get_func = getattr(self.user_defined_capture_rect, get_func_attr)
+                        set_func = getattr(self.user_defined_capture_rect, set_func_attr)
+                        if self.capture_redefine_start_value is None:
+                            self.capture_redefine_start_value = get_func()
+                        if data_id == "x":
+                            set_func(self.capture_redefine_start_value + delta.x())
+                        if data_id == "y":
+                            set_func(self.capture_redefine_start_value + delta.y())
+                        if data_id == "xy":
+                            set_func(self.capture_redefine_start_value + delta)
 
-                    # необходимо для нормальной работы
-                    self.user_defined_capture_rect = build_valid_rectF(
-                        self.user_defined_capture_rect.topLeft(), self.user_defined_capture_rect.bottomRight()
-                    )
+                        # необходимо для нормальной работы
+                        self.user_defined_capture_rect = build_valid_rectF(
+                            self.user_defined_capture_rect.topLeft(), self.user_defined_capture_rect.bottomRight()
+                        )
 
-                    self.input_POINT1 = self.user_defined_capture_rect.topLeft()
-                    self.input_POINT2 = self.user_defined_capture_rect.bottomRight()
+                        self.input_POINT1 = self.user_defined_capture_rect.topLeft()
+                        self.input_POINT2 = self.user_defined_capture_rect.bottomRight()
 
             if event.buttons() == Qt.MiddleButton:
                 delta = QPoint(event.pos() - self.ocp)
@@ -1028,6 +1038,16 @@ class Portal(QWidget):
 
         if self.editing_mode:
             if event.button() == Qt.LeftButton:
+
+                isCaptureZone = self.user_defined_capture_rect is not None
+                if isCaptureZone:
+                    self.current_capture_zone_center = self.user_defined_capture_rect.center()
+                    self.ocp = event.pos()
+                    self.drag_capture_zone = True
+                    return
+                else:
+                    self.drag_capture_zone = False
+
                 self.start_cursor_position = self.mapToCanvas(QPointF(event.pos()))
                 self.capture_redefine_start_value = None
                 self.get_region_info()
@@ -1059,21 +1079,24 @@ class Portal(QWidget):
         if self.editing_mode:
             if event.button() == Qt.LeftButton:
 
-                if self.drag_inside_capture_zone:
-                    self.drag_inside_capture_zone = False
-                    if self.is_rect_defined:
-                        pass
-                if self.user_input_started:
-                    if not self.is_input_points_set():
-                        # это должно помочь от крашей
-                        self.user_input_started = False
-                        self.input_POINT1 = None
-                        self.input_POINT2 = None
-                        return
-                    self.is_rect_defined = True
-                    self.user_defined_capture_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
-                    self.is_rect_being_redefined = False
-                self.get_region_info() # здесь только для установки курсора
+                if self.drag_capture_zone:
+                    self.drag_capture_zone = False
+                else:
+                    if self.drag_inside_capture_zone:
+                        self.drag_inside_capture_zone = False
+                        if self.is_rect_defined:
+                            pass
+                    if self.user_input_started:
+                        if not self.is_input_points_set():
+                            # это должно помочь от крашей
+                            self.user_input_started = False
+                            self.input_POINT1 = None
+                            self.input_POINT2 = None
+                            return
+                        self.is_rect_defined = True
+                        self.user_defined_capture_rect = build_valid_rectF(self.input_POINT1, self.input_POINT2)
+                        self.is_rect_being_redefined = False
+                    self.get_region_info() # здесь только для установки курсора
 
 
 
