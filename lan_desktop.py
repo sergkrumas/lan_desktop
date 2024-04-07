@@ -139,9 +139,10 @@ class DataType:
     PlainText = 1
     Greeting = 2
 
-    MouseData = 10
-    KeyboardData = 11
-    FileData = 12
+    ScreenData = 10
+    MouseData = 11
+    KeyboardData = 12
+    FileData = 13
 
     ControlFPS = 20
     ControlUserDefinedCaptureRect = 21
@@ -270,10 +271,11 @@ def prepare_screenshot_to_transfer(capture_index, connection):
 
     capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.width(), capture_rect.height()]
 
-    serial_data = [{
+    serial_data = {DataType.ScreenData: {
         'rect': capture_rect_tuple,
         'capture_index': capture_index,
-    }]
+        'screens_count': len(QGuiApplication.screens()),
+    }}
 
     return prepare_data_to_write(serial_data, byte_array.data())
 
@@ -1411,7 +1413,7 @@ class Connection(QObject):
 
                     try:
 
-                        capture_rect_tuple = None
+                        screen_info = None
                         file_chunk_info = None
 
                         if cbor2_data:
@@ -1509,25 +1511,29 @@ class Connection(QObject):
                                         self.user_defined_capture_rect = rect
                                         chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
 
+                                elif self.currentDataType == DataType.ScreenData:
+                                    screen_info = value
+
+
+
                                 else:
                                     chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня {parsed_data}')
 
 
                             else:
-                                print(parsed_data)
-
-                                data_dict = parsed_data[0]
-
-                                capture_rect_tuple = data_dict.get('rect', None)
-                                capture_index = data_dict.get('capture_index', None)
+                                chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня, да и ещё без заголовка {parsed_data}')
 
                         if binary_data:
 
-                            if capture_rect_tuple:
+                            if screen_info:
                                 input_byte_array = QByteArray(binary_data)
                                 capture_image = QImage()
                                 capture_image.loadFromData(input_byte_array, Globals.IMAGE_FORMAT);
-                                print(f'recieved image, {len(binary_data)}, {capture_image.size()}')
+                                print(f'received image, {len(binary_data)}, {capture_image.size()}')
+
+                                capture_rect_tuple = screen_info.get('rect', None)
+                                capture_index = screen_info.get('capture_index', None)
+                                screens_count = screen_info.get('screens_count', None)
 
                                 show_in_portal(capture_image, capture_index, QRect(*capture_rect_tuple), self)
 
