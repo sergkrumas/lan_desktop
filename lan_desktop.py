@@ -704,7 +704,9 @@ class Portal(QWidget):
     def paintEvent(self, event):
         painter = QPainter()
         painter.begin(self)
-
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         painter.fillRect(self.rect(), Qt.black)
 
