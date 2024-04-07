@@ -460,6 +460,8 @@ class Portal(QWidget):
         action.triggered.connect(partial(toggle_, self, 'show_log_keys'))
         viewMenu.addAction(action)
 
+        viewMenu.addSeparator()
+
         def send_contol_fps(value):
             if self.connection:
                 self.connection.sendControlFPS(value)
@@ -469,6 +471,11 @@ class Portal(QWidget):
             set_fps_action = QAction(f'Set FPS to {fps_value}', self)
             set_fps_action.triggered.connect(partial(send_contol_fps, fps_value))
             viewMenu.addAction(set_fps_action)
+
+        viewMenu.addSeparator()
+        reset_userdefined_capture = QAction('Reset user-defined capture region', self)
+        reset_userdefined_capture.triggered.connect(self.reset_userdefined_capture)
+        viewMenu.addAction(reset_userdefined_capture)
 
         toggle_editing_mode = QAction('Editing Mode', self)
         toggle_editing_mode.setCheckable(True)
@@ -502,6 +509,10 @@ class Portal(QWidget):
         'shift', 'shiftleft', 'shiftright', 'sleep', 'space', 'stop', 'subtract', 'tab',
         'up', 'volumedown', 'volumemute', 'volumeup', 'win', 'winleft', 'winright', 'yen',
         'command', 'option', 'optionleft', 'optionright']
+
+    def reset_userdefined_capture(self):
+        reset_rect = QRect()
+        self.connection.sendControlUserDefinedCaptureRect(reset_rect)
 
     def doScaleCanvas(self, scroll_value, ctrl, shift, no_mod,
                 pivot=None, factor_x=None, factor_y=None, precalculate=False, canvas_origin=None, canvas_scale_x=None, canvas_scale_y=None):
@@ -1328,6 +1339,7 @@ class Connection(QObject):
         #  2 - third monitor etc
         self.capture_index = 0
         self.user_defined_capture_rect = None
+        self.before_user_defined_capture_index = None
 
     def name(self):
         return self.username
@@ -1466,14 +1478,21 @@ class Connection(QObject):
                                     self.screenshotTimer.setInterval(int(1000/fps))
 
                                 elif self.currentDataType == DataType.ControlUserDefinedCaptureRect:
+                                    if self.capture_index != -2:
+                                        self.before_user_defined_capture_index = self.capture_index
                                     rect = value['rect']
                                     rect = QRect(*rect)
-                                    self.capture_index = -2
-                                    self.user_defined_capture_rect = rect
-                                    chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
+                                    if rect.isNull():
+                                        self.capture_index = self.before_user_defined_capture_index
+                                        self.user_defined_capture_rect = None
+                                        chat_dialog.appendSystemMessage(f'Remote host wants to reset user-defined capture rect')
+                                    else:
+                                        self.capture_index = -2
+                                        self.user_defined_capture_rect = rect
+                                        chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
 
                                 else:
-                                    chat_dialog.appendSystemMessage('Пришла какая-то непонятная хуйня')
+                                    chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня {parsed_data}')
 
 
                             else:
@@ -2305,7 +2324,8 @@ def excepthook(exc_type, exc_value, exc_tb):
         traceback_lines = exc_tb
     else:
         traceback_lines = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-    locale.setlocale(locale.LC_ALL, "russian")
+    if platform.system() == 'Windows':
+        locale.setlocale(locale.LC_ALL, "russian")
     datetime_string = time.strftime("%A, %d %B %Y %X").capitalize()
     dt = "{0} {1} {0}".format(" "*15, datetime_string)
     dt_framed = "{0}\n{1}\n{0}\n".format("-"*len(dt), dt)
