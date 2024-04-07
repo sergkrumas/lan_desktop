@@ -1221,7 +1221,7 @@ class Portal(QWidget):
             self.addToKeysLog('up', key_name_attr)
             self.sendKeyData(event, 'keyUp')
 
-def show_in_portal(image, capture_index, screens_count, monitor_capture_rect, connection):
+def show_in_portal(image, capture_index, screens_count, client_screen_capture_rect, connection):
 
     portal = chat_dialog.portal_widget
     portal.connection = connection
@@ -1233,7 +1233,7 @@ def show_in_portal(image, capture_index, screens_count, monitor_capture_rect, co
     else:
         portal.image_to_show = image
         portal.user_defined_image_to_show = None
-        portal.monitor_capture_rect = monitor_capture_rect
+        portal.monitor_capture_rect = client_screen_capture_rect
 
         portal.is_grayed = False
 
