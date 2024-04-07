@@ -1665,7 +1665,7 @@ class Connection(QObject):
 
         mac_address = find_mac_for_local_socket_addr(local_address_string)
         msg = f'i\'m {local_address_string} sending greetings message to {peer_address_string}'
-        
+
         chat_dialog.appendSystemMessage(msg)
         status = chat_dialog.retreive_status()
         self.socket.write(
