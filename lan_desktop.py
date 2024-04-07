@@ -1435,7 +1435,7 @@ class Connection(QObject):
 
     def processReadyRead(self):
 
-        def retrieve_data(length):
+        def retreive_data(length):
             data = self.socket_buffer
             requested_data = data[:length]
             left_data = data[length:]
@@ -1450,9 +1450,9 @@ class Connection(QObject):
         if True:
             if self.readState == self.states.readSize:
                 if len(self.socket_buffer) >= Globals.TCP_MESSAGE_HEADER_SIZE:
-                    self.content_data_size = int.from_bytes(retrieve_data(Globals.INT_SIZE), 'big')
-                    self.cbor2_data_size = int.from_bytes(retrieve_data(Globals.INT_SIZE), 'big')
-                    self.binary_data_size = int.from_bytes(retrieve_data(Globals.INT_SIZE), 'big')
+                    self.content_data_size = int.from_bytes(retreive_data(Globals.INT_SIZE), 'big')
+                    self.cbor2_data_size = int.from_bytes(retreive_data(Globals.INT_SIZE), 'big')
+                    self.binary_data_size = int.from_bytes(retreive_data(Globals.INT_SIZE), 'big')
                     self.readState = self.states.readData
                     print('content_data_size', self.content_data_size, 'socket_buffer_size', len(self.socket_buffer))
                     # print('size read', self.content_data_size)
@@ -1468,8 +1468,8 @@ class Connection(QObject):
                     raise Exception('Fuck!')
 
                 if len(self.socket_buffer) >= self.content_data_size:
-                    cbor2_data = retrieve_data(self.cbor2_data_size)
-                    binary_data = retrieve_data(self.binary_data_size)
+                    cbor2_data = retreive_data(self.cbor2_data_size)
+                    binary_data = retreive_data(self.binary_data_size)
 
                     try:
 
