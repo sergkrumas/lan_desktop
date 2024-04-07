@@ -381,6 +381,7 @@ class Portal(QWidget):
         self.show_log_keys = False
 
         self.disconnect = False
+        self.before_client_screen_capture_rect = QRect()
 
         self.receiving_capture_index = 0
 
@@ -1234,7 +1235,6 @@ def show_in_portal(image, capture_index, screens_count, client_screen_capture_re
         portal.image_to_show = image
         portal.user_defined_image_to_show = None
         portal.monitor_capture_rect = client_screen_capture_rect
-
         portal.is_grayed = False
 
     portal.receiving_capture_index = capture_index
@@ -1244,7 +1244,9 @@ def show_in_portal(image, capture_index, screens_count, client_screen_capture_re
     portal.update()
 
 
-
+    if portal.before_client_screen_capture_rect != client_screen_capture_rect:
+        portal.before_client_screen_capture_rect = client_screen_capture_rect
+        portal.fit_capture_to_portal()
 
 
 
