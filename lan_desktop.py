@@ -253,14 +253,16 @@ def prepare_data_to_write(serial_data, binary_attachment_data):
 
 
 
-def prepare_screenshot_to_transfer(capture_index, connection):
+def prepare_screenshot_to_transfer(connection):
 
-    if capture_index == -2:
-
+    if connection.capture_index == -2:
         capture_rect = connection.user_defined_capture_rect
         image = make_user_defined_capture_screenshot(capture_rect)
     else:
-        image, capture_rect = make_capture_frame(capture_index)
+        screens_count = len(QGuiApplication.screens())
+        if connection.capture_index+1 > screens_count:
+            connection.capture_index = 0
+        image, capture_rect = make_capture_frame(connection.capture_index)
 
     byte_array = QByteArray()
     buffer = QBuffer(byte_array)
@@ -273,7 +275,7 @@ def prepare_screenshot_to_transfer(capture_index, connection):
 
     serial_data = {DataType.ScreenData: {
         'rect': capture_rect_tuple,
-        'capture_index': capture_index,
+        'capture_index': connection.capture_index,
         'screens_count': len(QGuiApplication.screens()),
     }}
 
@@ -1614,7 +1616,7 @@ class Connection(QObject):
     def sendScreenshot(self):
 
         if chat_dialog.remote_control_chb.isChecked():
-            data = prepare_screenshot_to_transfer(self.capture_index, self)
+            data = prepare_screenshot_to_transfer(self)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
             self.socket.flush()
