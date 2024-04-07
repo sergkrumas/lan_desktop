@@ -15,20 +15,6 @@ import shutil
 import builtins
 
 
-def clear_current_folder(print):
-    print(f'cleaning current folder ... ')
-    current_dir = os.path.dirname(__file__)
-    for filename in os.listdir(current_dir):
-        file_path = os.path.join(current_dir, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                if not (file_path.endswith('.git') or file_path.startswith('peers_list')):
-                    shutil.rmtree(file_path)
-        except Exception as e:
-            print(f'Failed to delete {file_path}. Reason: {e}')
-
 def download(zip_FILENAME, print):
     zip_URL = "https://github.com/sergkrumas/lan_desktop/archive/refs/heads/master.zip"
     print(f'downloading .zip from {zip_URL}')
@@ -63,6 +49,11 @@ def moving_files(zip_FILENAME, print):
             # создаём папки, если их нет
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
 
+            if os.path.exists(dst_path):
+                try:
+                    os.remove(dst_path)
+                except:
+                    pass
             shutil.move(src_path, dst_path)
 
     print(f'removing {zip_FILENAME}... ')
@@ -76,7 +67,6 @@ def do_update(print_func):
     zip_FILENAME = "update.zip"
 
     if 'lan_desktop.py' in os.listdir('.'):
-        clear_current_folder(print_func)
         download(zip_FILENAME, print_func)
         moving_files(zip_FILENAME, print_func)
 
