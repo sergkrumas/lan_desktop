@@ -147,7 +147,7 @@ class DataType:
     ControlUserDefinedCaptureRect = 21
 
 
-capture_zone_widget_window = None
+
 
 
 
