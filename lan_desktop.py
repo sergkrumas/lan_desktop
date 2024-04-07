@@ -380,6 +380,8 @@ class Portal(QWidget):
 
         self.disconnect = False
 
+        self.receiving_capture_index = 0
+
         self.canvas_scale_x = 1.0
         self.canvas_scale_y = 1.0
 
@@ -769,7 +771,22 @@ class Portal(QWidget):
                 draw_key_log(self, painter)
 
             text = Globals.reading_framerate
-            painter.drawText(self.rect(), Qt.AlignRight | Qt.AlignTop, text)
+            if not self.disconnect:
+                if self.receiving_capture_index == -1:
+                    text += '\nAll monitors'
+                else:
+                    number = self.receiving_capture_index + 1
+                    text += f'\nMonitor number: {number}'
+
+            align = Qt.AlignRight | Qt.AlignTop
+            align  = 0
+            rect = painter.boundingRect(QRect(), align, text)
+            rect.moveTopRight(self.rect().topRight() + QPoint(-10, 10))
+
+            painter.fillRect(rect, QColor(50, 50, 50, 150))
+
+            painter.setPen(QPen(Qt.white))
+            painter.drawText(rect, align, text)
 
         else:
             painter.fillRect(self.rect(), QColor(20, 20, 20, 255))
@@ -1218,6 +1235,7 @@ def show_in_portal(image, capture_index, screens_count, monitor_capture_rect, co
 
         portal.is_grayed = False
 
+    portal.receiving_capture_index = capture_index
     portal.update_monitors_submenu(screens_count)
 
     portal.activated = True
@@ -2174,7 +2192,7 @@ class ChatDialog(QDialog):
         app.screenRemoved.connect(self.screenCountChanged)
 
     def screenCountChanged(self, screen):
-        app = QApplication.instance()        
+        app = QApplication.instance()
         count = len(app.screens())
         self.appendSystemMessage(f'Screens count changed: now it is {count}')
 
