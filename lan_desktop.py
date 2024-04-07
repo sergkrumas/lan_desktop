@@ -127,6 +127,24 @@ class Globals():
         with open(Globals.peers_list_filename, 'w+', encoding='utf8') as file:
             file.write(data)
 
+    @staticmethod
+    def generate_circle_icon(color):
+        pixmap = QPixmap(24, 24)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter()
+        painter.begin(pixmap)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing, True)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(color))
+        rect = QRect(0, 0, 14, 14)
+        rect.moveCenter(pixmap.rect().center())
+        painter.drawEllipse(rect)
+        painter.end()
+        return QIcon(pixmap)
+
+
 
 
 def print(*args, **kwargs):
@@ -2181,7 +2199,8 @@ class ChatDialog(QDialog):
         QTimer.singleShot(10 * 1000, self.showInformation)
 
         for ip, mac in Globals.read_peers_list().items():
-            self.listWidget.addItem(f'[inactive] {ip} // {mac}')
+            item = QListWidgetItem(Globals.gray_icon, f' {ip} // {mac}')
+            self.listWidget.addItem(item)
 
         self.resize(1920, 1080)
 
@@ -2311,7 +2330,8 @@ class ChatDialog(QDialog):
         self.textEdit.setTextColor(Qt.gray)
         self.textEdit.append("* %s has joined" % nick)
         self.textEdit.setTextColor(color)
-        self.listWidget.addItem(nick)
+        item = QListWidgetItem(Globals.green_icon, nick)
+        self.listWidget.addItem(item)
 
     def participantLeft(self, nick):
         if not nick:
@@ -2322,8 +2342,9 @@ class ChatDialog(QDialog):
         if not items:
             return
         self.listWidget.takeItem(self.listWidget.row(item))
-        inactive_item_text = f'[inactive] {item.text()}'
-        self.listWidget.addItem(inactive_item_text)
+
+        item = QListWidgetItem(Globals.gray_icon, item.text())
+        self.listWidget.addItem(item)
 
         color = self.textEdit.textColor()
         self.textEdit.setTextColor(Qt.gray)
@@ -2435,6 +2456,9 @@ def main():
     sys.excepthook = excepthook
 
     app = QApplication(args)
+
+    Globals.gray_icon = Globals.generate_circle_icon(Qt.gray)
+    Globals.green_icon = Globals.generate_circle_icon(Qt.green)
 
     if platform.system() == 'Windows':
         appid = 'sergei_krumas.LAN_DESKTOP.client.1'
