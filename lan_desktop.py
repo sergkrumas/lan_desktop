@@ -477,6 +477,10 @@ class Portal(QWidget):
         reset_userdefined_capture.triggered.connect(self.reset_userdefined_capture)
         viewMenu.addAction(reset_userdefined_capture)
 
+        fit_capture_to_portal = QAction('Fit capture to portal', self)
+        fit_capture_to_portal.triggered.connect(self.fit_capture_to_portal)
+        viewMenu.addAction(fit_capture_to_portal)
+
         toggle_editing_mode = QAction('Editing Mode', self)
         toggle_editing_mode.setCheckable(True)
         toggle_editing_mode.setChecked(self.editing_mode)
@@ -513,6 +517,30 @@ class Portal(QWidget):
     def reset_userdefined_capture(self):
         reset_rect = QRect()
         self.connection.sendControlUserDefinedCaptureRect(reset_rect)
+
+    def fit_capture_to_portal(self):
+        if self.user_defined_capture_rect:
+            self.fit_rect_to_widget_gabarit(self.get_viewport_rect(sub=True))
+        else:
+            self.fit_rect_to_widget_gabarit(self.get_viewport_rect())
+
+    def fit_rect_to_widget_gabarit(self, viewport_mapped_rect):
+        content_pos = viewport_mapped_rect.center() - self.canvas_origin
+
+        viewport_center_pos = self.rect().center()
+        working_area_rect = self.rect()
+
+        self.canvas_origin = - content_pos + viewport_center_pos
+
+        content_rect = viewport_mapped_rect
+
+        fitted_rect = fit_rect_into_rect(content_rect, working_area_rect, float_mode=True)
+        self.doScaleCanvas(0, False, False, False,
+            pivot=viewport_center_pos,
+            factor_x=fitted_rect.width()/content_rect.width(),
+            factor_y=fitted_rect.height()/content_rect.height(),
+        )
+        self.update()
 
     def doScaleCanvas(self, scroll_value, ctrl, shift, no_mod,
                 pivot=None, factor_x=None, factor_y=None, precalculate=False, canvas_origin=None, canvas_scale_x=None, canvas_scale_y=None):
