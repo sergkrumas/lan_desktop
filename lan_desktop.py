@@ -146,7 +146,7 @@ class DataType:
 
     ControlFPS = 20
     ControlUserDefinedCaptureRect = 21
-
+    ControlCaptureScreen = 22
 
 
 
@@ -468,6 +468,8 @@ class Portal(QWidget):
         fit_capture_to_portal.triggered.connect(self.fit_capture_to_portal)
         viewMenu.addAction(fit_capture_to_portal)
 
+        self.monitorsMenu = self.menuBar.addMenu('Monitors')
+
         toggle_editing_mode = QAction('Editing Mode', self)
         toggle_editing_mode.setCheckable(True)
         toggle_editing_mode.setChecked(self.editing_mode)
@@ -500,6 +502,20 @@ class Portal(QWidget):
         'shift', 'shiftleft', 'shiftright', 'sleep', 'space', 'stop', 'subtract', 'tab',
         'up', 'volumedown', 'volumemute', 'volumeup', 'win', 'winleft', 'winright', 'yen',
         'command', 'option', 'optionleft', 'optionright']
+
+    def update_monitors_submenu(self, screens_count):
+        if not self.monitorsMenu.isVisible():
+            self.monitorsMenuUpdateTimestamp = time.time()
+            self.monitorsMenu.clear()
+            for i in range(-1, screens_count):
+                if i == -1:
+                    name = 'Capture all monitors'
+                else:
+                    number = i+1
+                    name = f'Capture monitor #{number}'
+                action = QAction(name, self)
+                action.triggered.connect(partial(self.connection.sendControlCaptureScreen, i))
+                self.monitorsMenu.addAction(action)
 
     def reset_userdefined_capture(self):
         reset_rect = QRect()
@@ -1186,7 +1202,7 @@ class Portal(QWidget):
             self.addToKeysLog('up', key_name_attr)
             self.sendKeyData(event, 'keyUp')
 
-def show_in_portal(image, capture_index, monitor_capture_rect, connection):
+def show_in_portal(image, capture_index, screens_count, monitor_capture_rect, connection):
 
     portal = chat_dialog.portal_widget
     portal.connection = connection
@@ -1201,6 +1217,8 @@ def show_in_portal(image, capture_index, monitor_capture_rect, connection):
         portal.monitor_capture_rect = monitor_capture_rect
 
         portal.is_grayed = False
+
+    portal.update_monitors_submenu(screens_count)
 
     portal.activated = True
     portal.update()
@@ -1514,7 +1532,14 @@ class Connection(QObject):
                                 elif self.currentDataType == DataType.ScreenData:
                                     screen_info = value
 
-
+                                elif self.currentDataType == DataType.ControlCaptureScreen:
+                                    capture_index = value
+                                    count = len(QGuiApplication.screens())
+                                    if capture_index > count-1:
+                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen with index {capture_index}, BUT THERE ARE ONLY {count} SCREENS!')
+                                    else:
+                                        self.capture_index = capture_index
+                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen with index {capture_index}')
 
                                 else:
                                     chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня {parsed_data}')
@@ -1535,7 +1560,7 @@ class Connection(QObject):
                                 capture_index = screen_info.get('capture_index', None)
                                 screens_count = screen_info.get('screens_count', None)
 
-                                show_in_portal(capture_image, capture_index, QRect(*capture_rect_tuple), self)
+                                show_in_portal(capture_image, capture_index, screens_count, QRect(*capture_rect_tuple), self)
 
 
                                 value = Globals.calculate_reading_framerate()
@@ -1600,6 +1625,10 @@ class Connection(QObject):
     def sendControlUserDefinedCaptureRect(self, rect_value):
         rect_tuple = (rect_value.left(), rect_value.top(), rect_value.width(), rect_value.height())
         data = prepare_data_to_write({DataType.ControlUserDefinedCaptureRect: {'rect': rect_tuple}}, None)
+        self.socket.write(data)
+
+    def sendControlCaptureScreen(self, capture_index):
+        data = prepare_data_to_write({DataType.ControlCaptureScreen: capture_index}, None)
         self.socket.write(data)
 
 def find_mac_for_local_socket_addr(local_address_string):
