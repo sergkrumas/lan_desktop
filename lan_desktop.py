@@ -1283,8 +1283,8 @@ def send_files(paths):
     for path in paths:
         SendFileTimer(path)
 
-recieving_files = defaultdict(int)
-recieving_files_objs = defaultdict(None)
+receiving_files = defaultdict(int)
+receiving_files_objs = defaultdict(None)
 
 def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
 
@@ -1295,19 +1295,19 @@ def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
 
     chat_dialog.appendSystemMessage(f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
 
-    global recieving_files
-    if md5_hash not in recieving_files:
-        recieving_files_objs[md5_hash] = open(md5_hash, 'wb')
+    global receiving_files
+    if md5_hash not in receiving_files:
+        receiving_files_objs[md5_hash] = open(md5_hash, 'wb')
 
-    file_obj = recieving_files_objs[md5_hash]
+    file_obj = receiving_files_objs[md5_hash]
 
-    recieving_files[md5_hash] += chunk_size
+    receiving_files[md5_hash] += chunk_size
 
     file_obj.write(binary_data)
 
-    if recieving_files[md5_hash] >= total_size:
-        recieving_files.pop(md5_hash)
-        recieving_files_objs.pop(md5_hash)
+    if receiving_files[md5_hash] >= total_size:
+        receiving_files.pop(md5_hash)
+        receiving_files_objs.pop(md5_hash)
         file_obj.close()
 
         rename_success = False
