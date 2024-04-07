@@ -153,9 +153,9 @@ def print(*args, **kwargs):
 
 class DataType:
     Undefined = 0
-
     PlainText = 1
     Greeting = 2
+    InfoStatus = 3
 
     ScreenData = 10
     MouseData = 11
@@ -1419,6 +1419,8 @@ class Connection(QObject):
         self.user_defined_capture_rect = None
         self.before_user_defined_capture_index = None
 
+        self.status = ''
+
     def name(self):
         return self.username
 
@@ -1483,6 +1485,7 @@ class Connection(QObject):
 
                                     msg = value['msg']
                                     mac = value['mac']
+                                    status = value['status']
 
                                     addr = self.socket.peerAddress().toString()
                                     port = self.socket.peerPort()
@@ -1496,6 +1499,16 @@ class Connection(QObject):
 
                                     self.screenshotTimer.start()
                                     self.readyForUse.emit()
+
+                                    # status update
+                                    self.status = status
+                                    chat_dialog.newParticipant(self.name(), self)
+
+                                elif self.currentDataType == DataType.InfoStatus:
+                                    new_status = value
+                                    chat_dialog.appendSystemMessage(f'Peer changed status from {self.status} to {new_status}')
+                                    self.status = new_status
+                                    chat_dialog.newParticipant(self.name(), self)
 
                                 elif self.currentDataType == DataType.PlainText:
                                     self.newMessage.emit(self.username, value)
@@ -1652,9 +1665,11 @@ class Connection(QObject):
 
         mac_address = find_mac_for_local_socket_addr(local_address_string)
         msg = f'i\'m {local_address_string} sending greetings message to {peer_address_string}'
+        
         chat_dialog.appendSystemMessage(msg)
+        status = chat_dialog.retreive_status()
         self.socket.write(
-            prepare_data_to_write({DataType.Greeting: {'msg': self.greetingMessage, 'mac': mac_address}}, None)
+            prepare_data_to_write({DataType.Greeting: {'msg': self.greetingMessage, 'mac': mac_address, 'status': status}}, None)
         )
         self.isGreetingMessageSent = True
 
@@ -1669,6 +1684,10 @@ class Connection(QObject):
 
     def sendControlCaptureScreen(self, capture_index):
         data = prepare_data_to_write({DataType.ControlCaptureScreen: capture_index}, None)
+        self.socket.write(data)
+
+    def sendStatus(self, status):
+        data = prepare_data_to_write({DataType.InfoStatus: status}, None)
         self.socket.write(data)
 
 def find_mac_for_local_socket_addr(local_address_string):
@@ -1746,6 +1765,10 @@ class Client(QObject):
     def get_peers_connections(self):
         return [item[1] for item in self.peers.items()]
 
+    def sendStatusToPeers(self, status):
+        for addr, connection in self.peers.items():
+            connection.sendStatus(status)
+
     def sendMessage(self, message):
         if not message:
             return
@@ -1754,7 +1777,6 @@ class Client(QObject):
             connection.sendMessage(message)
 
     def nickName(self):
-
         user_name = self.peerManager.userName()
         host_info = QHostInfo.localHostName()
         server_port = str(self.server.serverPort())
@@ -1816,7 +1838,7 @@ class Client(QObject):
         self.peers[socket.peerAddress()] = connection
         nick = connection.name()
         if nick:
-            self.newParticipant.emit(nick, socket)
+            self.newParticipant.emit(nick, connection)
 
     def removeConnection(self, socket):
         if socket.peerAddress() in self.peers.keys():
@@ -2214,6 +2236,18 @@ class ChatDialog(QDialog):
         app.screenAdded.connect(self.screenCountChanged)
         app.screenRemoved.connect(self.screenCountChanged)
 
+        self.remote_control_chb.stateChanged.connect(self.remote_control_state_changed)
+
+    def retreive_status(self):
+        if self.remote_control_chb.isChecked():
+            status = 'follower'
+        else:
+            status = 'leader'
+        return status
+
+    def remote_control_state_changed(self):
+        self.client.sendStatusToPeers(self.retreive_status())
+
     def screenCountChanged(self, screen):
         app = QApplication.instance()
         count = len(app.screens())
@@ -2307,30 +2341,34 @@ class ChatDialog(QDialog):
 
         self.lineEdit.clear()
 
-    def newParticipant(self, nick, socket):
+    def newParticipant(self, nick, connection):
         if not nick:
             return
 
+        icon = Globals.green_icon
+        if connection is not None:
+            socket = connection.socket
+            if socket is not None:
+                # removing [inactive] item
+                items_to_delete = []
+                peer_addr = socket.peerAddress().toString()
 
-        if socket is not None:
-            # removing [inactive] item
-            items_to_delete = []
-            peer_addr = socket.peerAddress().toString()
+                for n in range(self.listWidget.count()):
+                    item = self.listWidget.item(n)
+                    if peer_addr in item.text():
+                        items_to_delete.append(item)
 
-            for n in range(self.listWidget.count()):
-                item = self.listWidget.item(n)
-                if peer_addr in item.text():
-                    items_to_delete.append(item)
-
-            for item in items_to_delete:
-                self.listWidget.takeItem(self.listWidget.row(item))
+                for item in items_to_delete:
+                    self.listWidget.takeItem(self.listWidget.row(item))
+                if connection.status == 'leader':
+                    icon = Globals.red_icon
 
 
         color = self.textEdit.textColor()
         self.textEdit.setTextColor(Qt.gray)
         self.textEdit.append("* %s has joined" % nick)
         self.textEdit.setTextColor(color)
-        item = QListWidgetItem(Globals.green_icon, nick)
+        item = QListWidgetItem(icon, nick)
         self.listWidget.addItem(item)
 
     def participantLeft(self, nick):
@@ -2459,6 +2497,7 @@ def main():
 
     Globals.gray_icon = Globals.generate_circle_icon(Qt.gray)
     Globals.green_icon = Globals.generate_circle_icon(Qt.green)
+    Globals.red_icon = Globals.generate_circle_icon(QColor(200, 0, 0))
 
     if platform.system() == 'Windows':
         appid = 'sergei_krumas.LAN_DESKTOP.client.1'
