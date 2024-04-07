@@ -2149,6 +2149,15 @@ class ChatDialog(QDialog):
         rect.moveCenter(QDesktopWidget().availableGeometry().center())
         self.move(rect.topLeft())
 
+        app = QApplication.instance()
+        app.screenAdded.connect(self.screenCountChanged)
+        app.screenRemoved.connect(self.screenCountChanged)
+
+    def screenCountChanged(self, screen):
+        app = QApplication.instance()        
+        count = len(app.screens())
+        self.appendSystemMessage(f'Screens count changed: now it is {count}')
+
     def testButtonHandler(self):
         sizes = self.splt.sizes()
         self.appendSystemMessage(str(sizes))
