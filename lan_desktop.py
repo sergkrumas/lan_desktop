@@ -707,7 +707,7 @@ class Portal(QWidget):
             #         image.setPixel(f1, f2, qRgb(gray, gray, gray))
             # self.image_to_show = image
 
-            self.image_to_show = self.image_to_show.convertToFormat(QImage.Format_Mono)
+            self.image_to_show = self.image_to_show.convertToFormat(QImage.Format_Grayscale16)
 
 
 
