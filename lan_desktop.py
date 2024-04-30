@@ -1431,6 +1431,12 @@ class Connection(QObject):
 
         self.status = ''
 
+        self.control_connection = False
+
+    def remove_occupato_flag_if_needed(self):
+        if self.control_connection:
+            Globals.OCCUPATO = False
+
     def name(self):
         return self.username
 
@@ -1516,11 +1522,19 @@ class Connection(QObject):
                                 elif self.currentDataType == DataType.ControlRequest:
 
                                     if value == ControlRequest.GiveMeControl:
-                                        self.screenshotTimer.start()
-                                        self.sendControlRequestAnswer(ControlRequest.Granted)
+                                        if Globals.OCCUPATO:
+                                            self.sendControlRequestAnswer(ControlRequest.Occupato)
+                                        else:
+                                            self.control_connection = True
+                                            Globals.OCCUPATO = True
+                                            self.sendControlRequestAnswer(ControlRequest.Granted)
+                                            self.screenshotTimer.start()
 
                                     elif value == ControlRequest.Granted:
                                         chat_dialog.prepare_portal()
+
+                                    elif value == ControlRequest.Occupato:
+                                        chat_dialog.appendSystemMessage('Error: remote host occupato!')
 
                                 elif self.currentDataType == DataType.InfoStatus:
                                     new_status = value
@@ -1871,6 +1885,7 @@ class Client(QObject):
             connection = self.peers.pop(socket.peerAddress())
             nick = connection.name()
             self.participantLeft.emit(nick)
+            connection.remove_occupato_flag_if_needed()
             connection.deleteLater()
 
 
