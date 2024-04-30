@@ -164,7 +164,6 @@ class DataType:
     KeyboardData = 12
     FileData = 13
 
-
     ControlFPS = 20
     ControlUserDefinedCaptureRect = 21
     ControlCaptureScreen = 22
