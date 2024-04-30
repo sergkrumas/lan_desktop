@@ -2221,7 +2221,10 @@ class ChatDialog(QDialog):
                     self.listWidget,
                     self.openPortalBtn,
                     self.wakeOnLanButton,
-                    self.testButton
+                    self.testButton,
+                    self.remote_control_chb,
+                    self.ENABLE_PRINT,
+                    self.show_log_keys_chb,
                 ]:
             w.setFocusPolicy(Qt.NoFocus)
 
