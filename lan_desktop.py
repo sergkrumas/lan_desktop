@@ -2496,6 +2496,10 @@ def init_settings(app):
     settings = QSettings(filepath, QSettings.IniFormat)
     app.setProperty('settings', settings)
 
+def get_settings():
+    app = QApplication.instance()
+    settings = app.property('settings')
+    return settings
 
 def main():
 
