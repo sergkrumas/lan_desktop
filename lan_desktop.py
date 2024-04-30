@@ -1536,6 +1536,15 @@ class Connection(QObject):
                                     elif value == ControlRequest.Occupato:
                                         chat_dialog.appendSystemMessage('Error: remote host occupato!')
 
+                                    elif value == ControlRequest.Break:
+                                        if self.control_connection:
+                                            Globals.OCCUPATO = False
+                                            self.control_connection = False
+                                            self.screenshotTimer.stop()
+                                            self.sendControlRequestAnswer(ControlRequest.Break)
+                                        else:
+                                            chat_dialog.portal_off()
+
                                 elif self.currentDataType == DataType.InfoStatus:
                                     new_status = value
                                     chat_dialog.appendSystemMessage(f'Peer changed status from {self.status} to {new_status}')
@@ -1680,7 +1689,7 @@ class Connection(QObject):
 
     def sendScreenshot(self):
 
-        if chat_dialog.remote_control_chb.isChecked():
+        if chat_dialog.remote_control_chb.isChecked() and self.control_connection:
             data = prepare_screenshot_to_transfer(self)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
@@ -2126,6 +2135,8 @@ class ChatDialog(QDialog):
             os.path.join(os.path.dirname(__file__), "lan_desktop.py")
         )
 
+        self.disconnect_mode = False
+
         self.myNickName = ''
         self.tableFormat = QTextTableFormat()
 
@@ -2298,6 +2309,15 @@ class ChatDialog(QDialog):
 
     def prepare_portal(self):
         self.splt.setSizes([300, 400, 300])
+        self.disconnect_mode = True
+        self.openPortalBtn.setText("Disconnect")        
+        self.update()
+
+    def portal_off(self):
+        sizes = self.splt.sizes()
+        self.splt.setSizes([sizes[0], 0, sizes[2]])
+        self.openPortalBtn.setText("Open Portal")
+        self.framerate_label.setText('')
         self.update()
 
     def openPortalButtonHandler(self):
@@ -2328,8 +2348,12 @@ class ChatDialog(QDialog):
             if connection is None:
                 self.appendSystemMessage('Не найден в списке активных пиров!')
             else:
-                connection.requestControlPortal()
-                # builtins.print(' connection ', connection)
+
+                if self.disconnect_mode:
+                    connection.sendControlRequestAnswer(ControlRequest.Break)
+                else:
+                    connection.requestControlPortal()
+                    # builtins.print(' connection ', connection)
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
