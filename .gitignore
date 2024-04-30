@@ -1,3 +1,5 @@
 
 *.pyc
 peers_list_*.list
+lan_desktop.Windows.settings
+lan_desktop.Linux.settings

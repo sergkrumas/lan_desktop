@@ -2179,8 +2179,11 @@ class ChatDialog(QDialog):
         self.portal_widget = Portal(self)
         self.portal_widget.resize(1200, 1000)
 
-        if platform.system() == 'Linux':
-            self.remote_control_chb.setChecked(True)
+        
+        settings = get_settings()
+
+        allow_remote_control = str_to_bool( get_settings().value('allow_remote_control', bool_to_str(False)) )
+        self.remote_control_chb.setChecked(allow_remote_control)
 
         splt = QSplitter(Qt.Horizontal)
         splt.addWidget(self.textEdit)
@@ -2246,6 +2249,7 @@ class ChatDialog(QDialog):
         return status
 
     def remote_control_state_changed(self):
+        get_settings().setValue('allow_remote_control', bool_to_str(self.remote_control_chb.isChecked()))
         self.client.sendStatusToPeers(self.retrieve_status())
 
     def screenCountChanged(self, screen):
@@ -2477,8 +2481,8 @@ def excepthook(exc_type, exc_value, exc_tb):
         crash_log.write(dt_framed)
         crash_log.write("\n")
         crash_log.write(traceback_lines)
-    print("*** excepthook info ***")
-    print(traceback_lines)
+    builtins.print("*** excepthook info ***")
+    builtins.print(traceback_lines)
     app = QApplication.instance()
     if app:
         stray_icon = app.property("stray_icon")
@@ -2493,13 +2497,16 @@ def init_settings(app):
     QCoreApplication.setApplicationName("LAN-DESKTOP");
 
     filepath = os.path.join(os.path.dirname(__file__), f'lan_desktop.{platform.system()}.settings')
-    settings = QSettings(filepath, QSettings.IniFormat)
-    app.setProperty('settings', settings)
+    Globals.settings = QSettings(filepath, QSettings.IniFormat)
 
 def get_settings():
-    app = QApplication.instance()
-    settings = app.property('settings')
-    return settings
+    return Globals.settings
+
+def bool_to_str(x):
+    return str(int(x))
+
+def str_to_bool(x):
+    return bool(int(x))
 
 def main():
 
