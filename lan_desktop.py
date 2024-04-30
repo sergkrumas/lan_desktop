@@ -2176,6 +2176,10 @@ class ChatDialog(QDialog):
         self.testButton.clicked.connect(self.testButtonHandler)
         hor_layout.addWidget(self.testButton)
 
+        self.openPortalBtn = QPushButton('Open Portal')
+        self.openPortalBtn.clicked.connect(self.openPortalButtonHandler)
+        hor_layout.addWidget(self.openPortalBtn)
+
         self.portal_widget = Portal(self)
         self.portal_widget.resize(1200, 1000)
 
@@ -2206,10 +2210,16 @@ class ChatDialog(QDialog):
 
         self.setAcceptDrops(True)
 
-        self.lineEdit.setFocusPolicy(Qt.StrongFocus)
-        self.textEdit.setFocusPolicy(Qt.NoFocus)
         self.textEdit.setReadOnly(True)
-        self.listWidget.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit.setFocusPolicy(Qt.StrongFocus)
+
+        for w in [self.textEdit, 
+                    self.listWidget,
+                    self.openPortalBtn,
+                    self.wakeOnLanButton,
+                    self.testButton
+                ]:
+            w.setFocusPolicy(Qt.NoFocus)        
 
         self.lineEdit.returnPressed.connect(self.returnPressed)
         self.client.newMessage.connect(self.appendMessage)
@@ -2239,6 +2249,9 @@ class ChatDialog(QDialog):
         app.screenRemoved.connect(self.screenCountChanged)
 
         self.remote_control_chb.stateChanged.connect(self.remote_control_state_changed)
+
+    def openPortalButtonHandler(self):
+        pass
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
