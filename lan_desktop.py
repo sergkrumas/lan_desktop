@@ -1706,7 +1706,7 @@ class Connection(QObject):
 
     def requestControlPortal(self):
         data = prepare_data_to_write({DataType.ControlRequest: ControlRequest.GiveMeControl}, None)
-        self.socket.write(data)        
+        self.socket.write(data)
 
 def find_mac_for_local_socket_addr(local_address_string):
     for ip_addr, mac in retrieve_ip_mac_pairs():
