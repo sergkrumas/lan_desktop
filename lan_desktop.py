@@ -85,6 +85,8 @@ class Globals():
     last_reading = None
     last_writing = None
 
+    OCCUPATO = False # remote control
+
     reading_framerate = ''
     writing_framerate = ''
 
