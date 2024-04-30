@@ -2254,6 +2254,8 @@ class ChatDialog(QDialog):
 
         self.remote_control_chb.stateChanged.connect(self.remote_control_state_changed)
 
+        self.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+
     def openPortalButtonHandler(self):
         pass
 
