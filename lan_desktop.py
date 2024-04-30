@@ -2486,6 +2486,16 @@ def excepthook(exc_type, exc_value, exc_tb):
             stray_icon.hide()
     sys.exit()
 
+def init_settings(app):
+
+    QCoreApplication.setOrganizationName("Sergei Krumas");
+    QCoreApplication.setOrganizationDomain("sergei-krumas.com");
+    QCoreApplication.setApplicationName("LAN-DESKTOP");
+
+    filepath = os.path.join(os.path.dirname(__file__), f'lan_desktop.{platform.system()}.settings')
+    settings = QSettings(filepath, QSettings.IniFormat)
+    app.setProperty('settings', settings)
+
 
 def main():
 
@@ -2494,6 +2504,8 @@ def main():
     sys.excepthook = excepthook
 
     app = QApplication(args)
+
+    init_settings(app)
 
     Globals.gray_icon = Globals.generate_circle_icon(Qt.gray)
     Globals.green_icon = Globals.generate_circle_icon(Qt.green)
