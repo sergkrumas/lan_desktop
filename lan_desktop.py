@@ -164,12 +164,17 @@ class DataType:
     KeyboardData = 12
     FileData = 13
 
+
     ControlFPS = 20
     ControlUserDefinedCaptureRect = 21
     ControlCaptureScreen = 22
+    ControlRequest = 23
 
-
-
+class ControlRequest:
+    GiveMeControl = 0
+    Occupato = 1
+    Granted = 2
+    Break = 3
 
 
 
