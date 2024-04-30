@@ -2227,7 +2227,7 @@ class ChatDialog(QDialog):
             item = QListWidgetItem(Globals.gray_icon, f' {ip} // {mac}')
             self.listWidget.addItem(item)
 
-        self.resize(1920, 1080)
+        self.resize(1200, 800)
 
         self.split_sizes = []
 
