@@ -2186,6 +2186,7 @@ class ChatDialog(QDialog):
         splt = QSplitter(Qt.Horizontal)
         splt.addWidget(self.textEdit)
         splt.addWidget(self.portal_widget)
+        self.portal_widget.resize(0, 0)
         splt.addWidget(self.listWidget)
         layout_h.addWidget(splt)
         self.splt = splt
