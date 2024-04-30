@@ -1517,6 +1517,10 @@ class Connection(QObject):
 
                                     if value == ControlRequest.GiveMeControl:
                                         self.screenshotTimer.start()
+                                        self.sendControlRequestAnswer(ControlRequest.Granted)
+
+                                    elif value == ControlRequest.Granted:
+                                        chat_dialog.prepare_portal()
 
                                 elif self.currentDataType == DataType.InfoStatus:
                                     new_status = value
@@ -1706,6 +1710,10 @@ class Connection(QObject):
 
     def requestControlPortal(self):
         data = prepare_data_to_write({DataType.ControlRequest: ControlRequest.GiveMeControl}, None)
+        self.socket.write(data)
+
+    def sendControlRequestAnswer(self, value):
+        data = prepare_data_to_write({DataType.ControlRequest: value}, None)
         self.socket.write(data)
 
 def find_mac_for_local_socket_addr(local_address_string):
@@ -2272,6 +2280,10 @@ class ChatDialog(QDialog):
         self.remote_control_chb.stateChanged.connect(self.remote_control_state_changed)
 
         self.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+
+    def prepare_portal(self):
+        self.splt.setSizes([300, 400, 300])
+        self.update()
 
     def openPortalButtonHandler(self):
 
