@@ -2217,13 +2217,13 @@ class ChatDialog(QDialog):
         self.textEdit.setReadOnly(True)
         self.lineEdit.setFocusPolicy(Qt.StrongFocus)
 
-        for w in [self.textEdit, 
+        for w in [self.textEdit,
                     self.listWidget,
                     self.openPortalBtn,
                     self.wakeOnLanButton,
                     self.testButton
                 ]:
-            w.setFocusPolicy(Qt.NoFocus)        
+            w.setFocusPolicy(Qt.NoFocus)
 
         self.lineEdit.returnPressed.connect(self.returnPressed)
         self.client.newMessage.connect(self.appendMessage)
