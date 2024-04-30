@@ -1556,84 +1556,91 @@ class Connection(QObject):
 
                                 elif self.currentDataType == DataType.MouseData:
 
-                                    mouse_data = value
-                                    item = list(mouse_data.items())[0]
-                                    mouse_type = item[0]
-                                    mouse_value = item[1]
+                                    if self.control_connection:
+                                        mouse_data = value
+                                        item = list(mouse_data.items())[0]
+                                        mouse_type = item[0]
+                                        mouse_value = item[1]
 
-                                    mouse_button = mouse_value
-                                    if mouse_type == 'mousePos':
-                                        x, y = mouse_value
-                                        try:
-                                            pyautogui.moveTo(x, y)
-                                        except:
-                                            pass
+                                        mouse_button = mouse_value
+                                        if mouse_type == 'mousePos':
+                                            x, y = mouse_value
+                                            try:
+                                                pyautogui.moveTo(x, y)
+                                            except:
+                                                pass
 
-                                    elif mouse_type == 'mouseDown':
-                                        pyautogui.mouseDown(button=mouse_button)
-                                    elif mouse_type == 'mouseUp':
-                                        pyautogui.mouseUp(button=mouse_button)
-                                        show_screencast_keys_window('up', mouse_button)
+                                        elif mouse_type == 'mouseDown':
+                                            pyautogui.mouseDown(button=mouse_button)
+                                        elif mouse_type == 'mouseUp':
+                                            pyautogui.mouseUp(button=mouse_button)
+                                            show_screencast_keys_window('up', mouse_button)
 
-                                    elif mouse_type == 'mouseWheel':
-                                        if mouse_value > 0:
-                                            pyautogui.scroll(1)
-                                            show_screencast_keys_window('up', "wheel up")
-                                        else:
-                                            pyautogui.scroll(-1)
-                                            show_screencast_keys_window('up', "wheel down")
+                                        elif mouse_type == 'mouseWheel':
+                                            if mouse_value > 0:
+                                                pyautogui.scroll(1)
+                                                show_screencast_keys_window('up', "wheel up")
+                                            else:
+                                                pyautogui.scroll(-1)
+                                                show_screencast_keys_window('up', "wheel down")
 
-                                    print(mouse_data)
+                                        print(mouse_data)
 
                                 elif self.currentDataType == DataType.KeyboardData:
-                                    keyboard_data = value
-                                    item = list(keyboard_data.items())[0]
-                                    event_type = item[0]
-                                    key_value = item[1]
 
-                                    if event_type == 'keyDown':
-                                        pyautogui.keyDown(key_value)
-                                    elif event_type == 'keyUp':
-                                        pyautogui.keyUp(key_value)
-                                        show_screencast_keys_window('up', key_value)
-                                    elif event_type == 'keyHotkey':
-                                        pyautogui.hotkey(key_value)
-                                        show_screencast_keys_window('up', "+".join(key_value))
+                                    if self.control_connection:
+                                        keyboard_data = value
+                                        item = list(keyboard_data.items())[0]
+                                        event_type = item[0]
+                                        key_value = item[1]
+
+                                        if event_type == 'keyDown':
+                                            pyautogui.keyDown(key_value)
+                                        elif event_type == 'keyUp':
+                                            pyautogui.keyUp(key_value)
+                                            show_screencast_keys_window('up', key_value)
+                                        elif event_type == 'keyHotkey':
+                                            pyautogui.hotkey(key_value)
+                                            show_screencast_keys_window('up', "+".join(key_value))
 
                                 elif self.currentDataType == DataType.FileData:
                                     file_chunk_info = value
 
 
                                 elif self.currentDataType == DataType.ControlFPS:
-                                    fps = value['fps']
-                                    chat_dialog.appendSystemMessage(f'Remote host wants {fps} FPS')
-                                    self.screenshotTimer.setInterval(int(1000/fps))
+                                    if self.control_connection:
+                                        fps = value['fps']
+                                        chat_dialog.appendSystemMessage(f'Remote host wants {fps} FPS')
+                                        self.screenshotTimer.setInterval(int(1000/fps))
 
                                 elif self.currentDataType == DataType.ControlUserDefinedCaptureRect:
-                                    if self.capture_index != -2:
-                                        self.before_user_defined_capture_index = self.capture_index
-                                    rect = value['rect']
-                                    rect = QRect(*rect)
-                                    if rect.isNull():
-                                        self.capture_index = self.before_user_defined_capture_index
-                                        self.user_defined_capture_rect = None
-                                        chat_dialog.appendSystemMessage(f'Remote host wants to reset user-defined capture rect')
-                                    else:
-                                        self.capture_index = -2
-                                        self.user_defined_capture_rect = rect
-                                        chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
+
+                                    if self.control_connection:
+                                        if self.capture_index != -2:
+                                            self.before_user_defined_capture_index = self.capture_index
+                                        rect = value['rect']
+                                        rect = QRect(*rect)
+                                        if rect.isNull():
+                                            self.capture_index = self.before_user_defined_capture_index
+                                            self.user_defined_capture_rect = None
+                                            chat_dialog.appendSystemMessage(f'Remote host wants to reset user-defined capture rect')
+                                        else:
+                                            self.capture_index = -2
+                                            self.user_defined_capture_rect = rect
+                                            chat_dialog.appendSystemMessage(f'Remote host wants to set user-defined capture rect {rect}')
 
                                 elif self.currentDataType == DataType.ScreenData:
                                     screen_info = value
 
                                 elif self.currentDataType == DataType.ControlCaptureScreen:
-                                    capture_index = value
-                                    count = len(QGuiApplication.screens())
-                                    if capture_index > count-1:
-                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}, BUT THERE ARE ONLY {count} SCREENS!')
-                                    else:
-                                        self.capture_index = capture_index
-                                        chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}')
+                                    if self.control_connection:
+                                        capture_index = value
+                                        count = len(QGuiApplication.screens())
+                                        if capture_index > count-1:
+                                            chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}, BUT THERE ARE ONLY {count} SCREENS!')
+                                        else:
+                                            self.capture_index = capture_index
+                                            chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}')
 
                                 else:
                                     chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня {parsed_data}')
