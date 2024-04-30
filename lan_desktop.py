@@ -2266,7 +2266,25 @@ class ChatDialog(QDialog):
         self.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
     def openPortalButtonHandler(self):
-        pass
+
+        item = self.listWidget.currentItem()
+        if not item:
+            self.appendSystemMessage('Не выбран пир в списке для подключения!')
+        else:
+            item_text = item.text()
+            splitter = " // "
+            if splitter not in item_text:
+                self.appendSystemMessage('Невозможно подключиться к самому себе, ты шо, ёбобо?')
+                return
+
+            item_text = item_text[item_text.index(':'):item_text.index('/')-1]
+
+            if item_text.rfind(":") > item_text.rfind("."):
+                # убираем порт из адреса, если он присутствует
+                item_text = item_text[:item_text.rfind(":")]
+
+            builtins.print(item_text)
+
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
