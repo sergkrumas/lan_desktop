@@ -1507,12 +1507,16 @@ class Connection(QObject):
                                     if not self.isGreetingMessageSent:
                                         self.sendGreetingMessage()
 
-                                    self.screenshotTimer.start()
                                     self.readyForUse.emit()
 
                                     # status update
                                     self.status = status
                                     chat_dialog.newParticipant(self.name(), self)
+
+                                elif self.currentDataType == DataType.ControlRequest:
+
+                                    if value == ControlRequest.GiveMeControl:
+                                        self.screenshotTimer.start()
 
                                 elif self.currentDataType == DataType.InfoStatus:
                                     new_status = value
@@ -1699,6 +1703,10 @@ class Connection(QObject):
     def sendStatus(self, status):
         data = prepare_data_to_write({DataType.InfoStatus: status}, None)
         self.socket.write(data)
+
+    def requestControlPortal(self):
+        data = prepare_data_to_write({DataType.ControlRequest: ControlRequest.GiveMeControl}, None)
+        self.socket.write(data)        
 
 def find_mac_for_local_socket_addr(local_address_string):
     for ip_addr, mac in retrieve_ip_mac_pairs():
@@ -2283,8 +2291,18 @@ class ChatDialog(QDialog):
                 # убираем порт из адреса, если он присутствует
                 item_text = item_text[:item_text.rfind(":")]
 
-            builtins.print(item_text)
-
+            ip_adress_ipv6 = item_text.strip()
+            # builtins.print(f'selected address {ip_adress_ipv6}')
+            connection = None
+            for peerAddress, peerConn in self.client.peers.items():
+                if peerAddress.toString() == ip_adress_ipv6:
+                    connection = peerConn
+                    break
+            if connection is None:
+                self.appendSystemMessage('Не найден в списке активных пиров!')
+            else:
+                connection.requestControlPortal()
+                # builtins.print(' connection ', connection)
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
