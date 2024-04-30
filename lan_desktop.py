@@ -2325,6 +2325,7 @@ class ChatDialog(QDialog):
         self.splt.setSizes([sizes[0], 0, sizes[2]])
         self.openPortalBtn.setText("Open Portal")
         self.framerate_label.setText('')
+        self.disconnect_mode = False        
         self.update()
 
     def openPortalButtonHandler(self):
