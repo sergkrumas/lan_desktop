@@ -2317,7 +2317,7 @@ class ChatDialog(QDialog):
     def prepare_portal(self):
         self.splt.setSizes([300, 400, 300])
         self.disconnect_mode = True
-        self.openPortalBtn.setText("Disconnect")        
+        self.openPortalBtn.setText("Disconnect")
         self.update()
 
     def portal_off(self):
@@ -2325,7 +2325,7 @@ class ChatDialog(QDialog):
         self.splt.setSizes([sizes[0], 0, sizes[2]])
         self.openPortalBtn.setText("Open Portal")
         self.framerate_label.setText('')
-        self.disconnect_mode = False        
+        self.disconnect_mode = False
         self.update()
 
     def openPortalButtonHandler(self):
