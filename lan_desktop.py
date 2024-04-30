@@ -886,6 +886,10 @@ class Portal(QWidget):
         else:
             image_rect = self.image_to_show.rect()
 
+        if self.canvas_scale_x == 0.0 or self.canvas_scale_y == 0.0:
+            self.canvas_scale_x = 1.0
+            self.canvas_scale_y = 1.0
+
         image_rect.setWidth(int(image_rect.width()*self.canvas_scale_x))
         image_rect.setHeight(int(image_rect.height()*self.canvas_scale_y))
 
@@ -2190,7 +2194,7 @@ class ChatDialog(QDialog):
         splt = QSplitter(Qt.Horizontal)
         splt.addWidget(self.textEdit)
         splt.addWidget(self.portal_widget)
-        self.portal_widget.resize(0, 0)
+        self.portal_widget.resize(0, self.portal_widget.height())
         splt.addWidget(self.listWidget)
         layout_h.addWidget(splt)
         self.splt = splt
