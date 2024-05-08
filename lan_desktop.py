@@ -2142,7 +2142,7 @@ class ChatDialog(QDialog):
             os.path.join(os.path.dirname(__file__), "lan_desktop.py")
         )
 
-        self.disconnect_mode = False
+        self.disconnect_data = None
 
         self.myNickName = ''
         self.tableFormat = QTextTableFormat()
@@ -2316,8 +2316,8 @@ class ChatDialog(QDialog):
 
     def prepare_portal(self):
         self.splt.setSizes([300, 400, 300])
-        self.disconnect_mode = True
-        self.openPortalBtn.setText("Disconnect")
+        # self.disconnect_data = None
+        self.openPortalBtn.setText("Close Portal")
         self.update()
 
     def portal_off(self):
@@ -2325,10 +2325,16 @@ class ChatDialog(QDialog):
         self.splt.setSizes([sizes[0], 0, sizes[2]])
         self.openPortalBtn.setText("Open Portal")
         self.framerate_label.setText('')
-        self.disconnect_mode = False
+        self.disconnect_data = None
         self.update()
 
     def openPortalButtonHandler(self):
+
+        if self.disconnect_data is not None:
+            connection = self.disconnect_data
+            connection.sendControlRequestAnswer(ControlRequest.Break)
+            self.disconnect_data = None
+            return
 
         item = self.listWidget.currentItem()
         if not item:
@@ -2356,12 +2362,8 @@ class ChatDialog(QDialog):
             if connection is None:
                 self.appendSystemMessage('Не найден в списке активных пиров!')
             else:
-
-                if self.disconnect_mode:
-                    connection.sendControlRequestAnswer(ControlRequest.Break)
-                else:
-                    connection.requestControlPortal()
-                    # builtins.print(' connection ', connection)
+                connection.requestControlPortal()
+                self.disconnect_data = connection
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
