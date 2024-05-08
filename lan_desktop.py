@@ -536,6 +536,8 @@ class Portal(QWidget):
         if not self.monitorsMenu.isVisible():
             self.monitorsMenuUpdateTimestamp = time.time()
             self.monitorsMenu.clear()
+            if screens_count == 0:
+                return
             for i in range(-1, screens_count):
                 if i == -1:
                     name = 'Capture all monitors'
@@ -1256,6 +1258,7 @@ class Portal(QWidget):
         self.image_to_show = None
         self.activated = False
         self.is_grayed = False
+        self.update_monitors_submenu(0)
 
 def show_in_portal(image, capture_index, screens_count, client_screen_capture_rect, connection):
 
