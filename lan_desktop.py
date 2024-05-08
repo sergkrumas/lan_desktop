@@ -2243,7 +2243,7 @@ class ChatDialog(QDialog):
         hor_layout.addWidget(self.testButton)
 
         self.openPortalBtn = QPushButton('Open Portal')
-        self.openPortalBtn.clicked.connect(self.openPortalButtonHandler)
+        self.openPortalBtn.clicked.connect(self.portalButtonHandler)
         hor_layout.addWidget(self.openPortalBtn)
 
         self.portal_widget = Portal(self)
@@ -2336,12 +2336,13 @@ class ChatDialog(QDialog):
         self.portal_widget.close_portal()
         self.update()
 
-    def openPortalButtonHandler(self):
+    def portalButtonHandler(self):
 
         if self.disconnect_data is not None:
             connection = self.disconnect_data
             connection.sendControlRequestAnswer(ControlRequest.Break)
             self.disconnect_data = None
+            self.portal_off()
             return
 
         item = self.listWidget.currentItem()
