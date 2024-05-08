@@ -74,7 +74,7 @@ class Globals():
     INT_SIZE = 4
     TCP_MESSAGE_HEADER_SIZE = INT_SIZE*3
 
-    VERSION_INFO = "v0.1"
+    VERSION_INFO = "v0.90"
     AUTHOR_INFO = "by Sergei Krumas"
 
     IMAGE_FORMAT = 'jpg'
