@@ -1250,6 +1250,13 @@ class Portal(QWidget):
             self.addToKeysLog('up', key_name_attr)
             self.sendKeyData(event, 'keyUp')
 
+    def close_portal(self):
+        self.connection = None
+        self.user_defined_image_to_show = None
+        self.image_to_show = None
+        self.activated = False
+        self.is_grayed = False
+
 def show_in_portal(image, capture_index, screens_count, client_screen_capture_rect, connection):
 
     portal = chat_dialog.portal_widget
@@ -2326,6 +2333,7 @@ class ChatDialog(QDialog):
         self.openPortalBtn.setText("Open Portal")
         self.framerate_label.setText('')
         self.disconnect_data = None
+        self.portal_widget.close_portal()
         self.update()
 
     def openPortalButtonHandler(self):
