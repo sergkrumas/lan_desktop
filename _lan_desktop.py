@@ -2149,7 +2149,7 @@ class ChatDialog(QDialog):
 
         self.STARTUP_CONFIG = (
             'lan_desktop_explorer_launcher',
-            os.path.join(os.path.dirname(__file__), "lan_desktop.py")
+            os.path.join(os.path.dirname(__file__), "lan_desktop.pyw")
         )
 
         self.disconnect_data = None
@@ -2583,7 +2583,10 @@ def show_system_tray(app, icon):
     @pyqtSlot()
     def on_trayicon_activated(reason):
         if reason == QSystemTrayIcon.Trigger: # левая кнопка мыши
-            pass
+            if chat_dialog.isVisible():
+                chat_dialog.hide()
+            else:
+                chat_dialog.show()
         if reason == QSystemTrayIcon.Context: # правая кнопка мыши
             menu = QMenu()
             menu.addSeparator()
@@ -2668,7 +2671,8 @@ def main():
 
     global chat_dialog
     chat_dialog = ChatDialog()
-    chat_dialog.show()
+    if Globals.DEBUG:
+        chat_dialog.show()
 
     stray_icon = show_system_tray(app, icon)
 
