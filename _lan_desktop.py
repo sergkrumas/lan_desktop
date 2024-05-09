@@ -1288,7 +1288,7 @@ class Portal(QWidget):
 
 
 
-class SendFileTimer(QTimer):
+class FileTransfer(QTimer):
     def __init__(self, filepath):
         super().__init__()
         Globals.file_sending_timers.append(self)
@@ -1339,49 +1339,50 @@ class SendFileTimer(QTimer):
             if self in Globals.file_sending_timers:
                 Globals.file_sending_timers.remove(self)
 
-def send_files(paths):
-    for path in paths:
-        SendFileTimer(path)
+    @staticmethod
+    def send_files(paths):
+        for path in paths:
+            FileTransfer(path)
 
-receiving_files = defaultdict(int)
-receiving_files_objs = defaultdict(None)
+    receiving_files = defaultdict(int)
+    receiving_files_objs = defaultdict(None)
 
-def write_file_chunk_data(file_chunk_info, binary_data, peer_address_string):
+    @classmethod
+    def write_file_chunk_data(cls, file_chunk_info, binary_data, peer_address_string):
 
-    md5_hash = file_chunk_info['md5_hash']
-    total_size = file_chunk_info['total_size']
-    filename = file_chunk_info['filename']
-    chunk_size = file_chunk_info['chunk_size']
+        md5_hash = file_chunk_info['md5_hash']
+        total_size = file_chunk_info['total_size']
+        filename = file_chunk_info['filename']
+        chunk_size = file_chunk_info['chunk_size']
 
-    chat_dialog.appendSystemMessage(f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
+        chat_dialog.appendSystemMessage(f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
 
-    global receiving_files
-    if md5_hash not in receiving_files:
-        receiving_files_objs[md5_hash] = open(md5_hash, 'wb')
+        if md5_hash not in cls.receiving_files:
+            cls.receiving_files_objs[md5_hash] = open(md5_hash, 'wb')
 
-    file_obj = receiving_files_objs[md5_hash]
+        file_obj = cls.receiving_files_objs[md5_hash]
 
-    receiving_files[md5_hash] += chunk_size
+        cls.receiving_files[md5_hash] += chunk_size
 
-    file_obj.write(binary_data)
+        file_obj.write(binary_data)
 
-    if receiving_files[md5_hash] >= total_size:
-        receiving_files.pop(md5_hash)
-        receiving_files_objs.pop(md5_hash)
-        file_obj.close()
+        if cls.receiving_files[md5_hash] >= total_size:
+            cls.receiving_files.pop(md5_hash)
+            cls.receiving_files_objs.pop(md5_hash)
+            file_obj.close()
 
-        rename_success = False
-        # Linux на виртуалке не успевает к этому времени закончить операции с файлом
-        # и приходится пробовать несколько раз
-        while not rename_success:
-            try:
-                os.rename(md5_hash, filename)
-                rename_success = True
-            except:
-                pass
-            time.sleep(1)
+            rename_success = False
+            # Linux на виртуалке не успевает к этому времени закончить операции с файлом
+            # и приходится пробовать несколько раз
+            while not rename_success:
+                try:
+                    os.rename(md5_hash, filename)
+                    rename_success = True
+                except:
+                    pass
+                time.sleep(1)
 
-        chat_dialog.appendSystemMessage(f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}', bold=True)
+            chat_dialog.appendSystemMessage(f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}', bold=True)
 
 
 
@@ -1681,7 +1682,7 @@ class Connection(QObject):
 
 
                             elif file_chunk_info:
-                                write_file_chunk_data(file_chunk_info, binary_data, self.socket.peerAddress().toString())
+                                FileTransfer.write_file_chunk_data(file_chunk_info, binary_data, self.socket.peerAddress().toString())
 
 
                     except Exception as e:
@@ -2565,7 +2566,7 @@ class ChatDialog(QDialog):
                 else:
                     pass
 
-            send_files(paths)
+            FileTransfer.send_files(paths)
 
             self.update()
         else:
