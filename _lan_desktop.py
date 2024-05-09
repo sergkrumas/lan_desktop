@@ -1260,31 +1260,31 @@ class Portal(QWidget):
         self.is_grayed = False
         self.update_monitors_submenu(0)
 
-def show_in_portal(image, capture_index, screens_count, client_screen_capture_rect, connection):
+    @staticmethod
+    def show_in_portal(image, capture_index, screens_count, client_screen_capture_rect, connection):
 
-    portal = chat_dialog.portal_widget
-    portal.connection = connection
-    portal.update_timestamp = time.time()
+        portal = chat_dialog.portal_widget
+        portal.connection = connection
+        portal.update_timestamp = time.time()
 
-    if capture_index == -2:
-        portal.user_defined_image_to_show = image
-        portal.gray_received_image()
-    else:
-        portal.image_to_show = image
-        portal.user_defined_image_to_show = None
-        portal.monitor_capture_rect = client_screen_capture_rect
-        portal.is_grayed = False
+        if capture_index == -2:
+            portal.user_defined_image_to_show = image
+            portal.gray_received_image()
+        else:
+            portal.image_to_show = image
+            portal.user_defined_image_to_show = None
+            portal.monitor_capture_rect = client_screen_capture_rect
+            portal.is_grayed = False
 
-    portal.receiving_capture_index = capture_index
-    portal.update_monitors_submenu(screens_count)
+        portal.receiving_capture_index = capture_index
+        portal.update_monitors_submenu(screens_count)
 
-    portal.activated = True
-    portal.update()
+        portal.activated = True
+        portal.update()
 
-
-    if portal.before_client_screen_capture_rect != client_screen_capture_rect:
-        portal.before_client_screen_capture_rect = client_screen_capture_rect
-        portal.fit_capture_to_portal()
+        if portal.before_client_screen_capture_rect != client_screen_capture_rect:
+            portal.before_client_screen_capture_rect = client_screen_capture_rect
+            portal.fit_capture_to_portal()
 
 
 
@@ -1671,7 +1671,7 @@ class Connection(QObject):
                                 capture_index = screen_info.get('capture_index', None)
                                 screens_count = screen_info.get('screens_count', None)
 
-                                show_in_portal(capture_image, capture_index, screens_count, QRect(*capture_rect_tuple), self)
+                                Portal.show_in_portal(capture_image, capture_index, screens_count, QRect(*capture_rect_tuple), self)
 
 
                                 value = Globals.calculate_reading_framerate()
