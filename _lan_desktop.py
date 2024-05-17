@@ -2207,6 +2207,10 @@ class ChatDialog(QDialog):
         self.remote_control_chb = QCheckBox('Allow Remote Control')
         hor_layout.addWidget(self.remote_control_chb)
 
+        self.allow_system_msgs_chb = QCheckBox('System messages')
+        hor_layout.addWidget(self.allow_system_msgs_chb)
+        self.allow_system_msgs_chb.stateChanged.connect(self.allow_system_msgs_handler)
+
         self.ENABLE_PRINT = QCheckBox('Console output')
         hor_layout.addWidget(self.ENABLE_PRINT)
         def trigger_console_output_chb():
@@ -2257,6 +2261,9 @@ class ChatDialog(QDialog):
         allow_remote_control = str_to_bool( get_settings().value('allow_remote_control', bool_to_str(False)) )
         self.remote_control_chb.setChecked(allow_remote_control)
 
+        allow_system_msgs = str_to_bool( get_settings().value('allow_system_msgs', bool_to_str(True)) )
+        self.allow_system_msgs_chb.setChecked(allow_system_msgs)
+
         splt = QSplitter(Qt.Horizontal)
         splt.addWidget(self.textEdit)
         splt.addWidget(self.portal_widget)
@@ -2289,8 +2296,9 @@ class ChatDialog(QDialog):
                     self.wakeOnLanButton,
                     self.testButton,
                     self.remote_control_chb,
-                    self.ENABLE_PRINT,
                     self.show_log_keys_chb,
+                    self.allow_system_msgs_chb,
+                    self.ENABLE_PRINT,
                 ]:
             w.setFocusPolicy(Qt.NoFocus)
 
@@ -2439,6 +2447,10 @@ class ChatDialog(QDialog):
                 return
         self.appendSystemMessage(f'WakeOnLAN: no any peer selected')
 
+    def allow_system_msgs_handler(self):
+        state = self.allow_system_msgs_chb.isChecked()
+        get_settings().setValue('allow_system_msgs', bool_to_str(state))
+
     def appendMessage(self, _from, message):
         if (not _from) or (not message):
             return
@@ -2452,19 +2464,20 @@ class ChatDialog(QDialog):
         bar.setValue(bar.maximum())
 
     def appendSystemMessage(self, message, bold=False):
-        if bold:
-            old_font = self.textEdit.currentFont()
-            font = self.textEdit.currentFont()
-            font.setWeight(2300)
-            self.textEdit.setCurrentFont(font)
+        if self.allow_system_msgs_chb.isChecked():
+            if bold:
+                old_font = self.textEdit.currentFont()
+                font = self.textEdit.currentFont()
+                font.setWeight(2300)
+                self.textEdit.setCurrentFont(font)
 
-        color = self.textEdit.textColor()
-        self.textEdit.setTextColor(Qt.green)
-        self.textEdit.append("! System: %s" % message)
-        self.textEdit.setTextColor(color)
+            color = self.textEdit.textColor()
+            self.textEdit.setTextColor(Qt.green)
+            self.textEdit.append("! System: %s" % message)
+            self.textEdit.setTextColor(color)
 
-        if bold:
-            self.textEdit.setCurrentFont(old_font)
+            if bold:
+                self.textEdit.setCurrentFont(old_font)
 
     def returnPressed(self):
         text = self.lineEdit.text()
