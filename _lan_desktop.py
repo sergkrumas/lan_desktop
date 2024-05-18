@@ -447,6 +447,8 @@ class Portal(QWidget):
         self.menuBar = QMenuBar(self)
         self.canvas_origin = QPoint(0, self.menuBar.height())
 
+        self.editing_mode_btn_rect_pressed = False
+
         keyboard_send_actions_data = (
             ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
             ('Послать Ctrl+Break', ['ctrl', 'break']),
@@ -834,17 +836,34 @@ class Portal(QWidget):
         painter.end()
 
     def draw_user_defined_capture_zone_info(self, painter):
+        self.editing_mode_btn_rect = None
         if self.user_defined_capture_rect:
             painter.save()
             crr = self.user_defined_capture_rect.toRect()
             client_screen_rect = self.mapFromCanvasToClientScreen(crr)
-            csr = client_screen_rect
-            text = f'canvas rect: {crr.width()}x{crr.height()}\nclient screen rect: {csr.width()}x{csr.height()}'
-            text += '\nEnter or Return - set user-defined capture region to remote computer and leave portal editing mode'
-            align = Qt.AlignLeft | Qt.AlignBottom
-            r = painter.boundingRect(QRect(), align, text)
-            r.moveBottomLeft(self.mapToViewport(crr.bottomRight()).toPoint() + QPoint(5, -5))
-            painter.drawText(r, align, text)
+            if Globals.DEBUG:
+                csr = client_screen_rect
+                text = f'canvas rect: {crr.width()}x{crr.height()}\nclient screen rect: {csr.width()}x{csr.height()}'
+                align = Qt.AlignLeft | Qt.AlignBottom
+                r = painter.boundingRect(QRect(), align, text)
+                p = self.mapToViewport(crr.bottomRight()).toPoint()
+                r.moveBottomLeft(p + QPoint(5, -5))
+                painter.drawText(r, align, text)
+            text2 = "Set capture region [Enter, Return]"
+            align = Qt.AlignHCenter | Qt.AlignVCenter
+            font = painter.font()
+            font.setWeight(1900)
+            painter.setFont(font)
+            r = painter.boundingRect(QRect(), align, text2)
+            r.adjust(0, 0, 20, 20)
+            r.moveTopLeft(p + QPoint(5, 5))
+            if r.contains(self.mapped_cursor_pos()):
+                painter.setPen(QColor(200, 50, 50))
+            else:
+                painter.setPen(QColor(50, 50, 50))
+            painter.fillRect(r, Qt.white)
+            painter.drawText(r, align, text2)
+            self.editing_mode_btn_rect = r
             painter.restore()
 
     def mapFromCanvasToClientScreen(self, canvas_rect):
@@ -1019,9 +1038,16 @@ class Portal(QWidget):
         )
         return rect
 
+    def mapped_cursor_pos(self):
+        return self.mapFromGlobal(QCursor().pos())
+
     def get_region_info(self):
-        self.define_regions_rects_and_set_cursor()
-        self.update()
+        if self.editing_mode_btn_rect is not None:
+            if self.editing_mode_btn_rect.contains(self.mapped_cursor_pos()):
+                self.setCursor(Qt.PointingHandCursor)
+            else:
+                self.define_regions_rects_and_set_cursor()
+        self.update() 
 
     def isViewportReadyAndCursorInsideViewport(self):
         if self.image_to_show is not None and self.isActiveWindow():
@@ -1063,6 +1089,12 @@ class Portal(QWidget):
         self.input_POINT1 = self.user_defined_capture_rect.topLeft()
         self.input_POINT2 = self.user_defined_capture_rect.bottomRight()
 
+    def cursor_inside_editing_mode_btn_rect(self,):
+        if self.editing_mode_btn_rect is not None:
+            if self.editing_mode_btn_rect.contains(self.mapped_cursor_pos()):
+                return True
+        return False
+
     def mouseMoveEvent(self, event):
         alt = event.modifiers() & Qt.AltModifier
 
@@ -1072,6 +1104,9 @@ class Portal(QWidget):
         if self.editing_mode:
             self.get_region_info()
             if event.buttons() == Qt.LeftButton:
+
+                if self.editing_mode_btn_rect_pressed:
+                    return
 
                 if self.drag_capture_zone:
                     delta = QPoint(event.pos() - self.ocp)
@@ -1136,6 +1171,10 @@ class Portal(QWidget):
         if self.editing_mode:
             if event.button() == Qt.LeftButton:
 
+                if self.cursor_inside_editing_mode_btn_rect():
+                    self.editing_mode_btn_rect_pressed = True
+                    return
+
                 isCaptureZone = self.user_defined_capture_rect is not None
                 if isCaptureZone:
                     self.current_capture_zone_center = self.user_defined_capture_rect.center()
@@ -1175,6 +1214,12 @@ class Portal(QWidget):
         alt = event.modifiers() & Qt.AltModifier
         if self.editing_mode:
             if event.button() == Qt.LeftButton:
+
+                if self.editing_mode_btn_rect_pressed:
+                    if self.cursor_inside_editing_mode_btn_rect():
+                        self.do_set_user_defined_capture_rect()
+                    self.editing_mode_btn_rect_pressed = False
+                    return
 
                 if self.drag_capture_zone:
                     self.drag_capture_zone = False
@@ -1238,15 +1283,18 @@ class Portal(QWidget):
             self.addToKeysLog('down', key_name_attr)
             self.sendKeyData(event, 'keyDown')
 
+    def do_set_user_defined_capture_rect(self):
+        if self.user_defined_capture_rect is not None:
+            rect = self.mapFromCanvasToClientScreen(self.user_defined_capture_rect.toRect())
+            self.connection.sendControlUserDefinedCaptureRect(rect)
+            self.editing_mode = False
+        else:
+            chat_dialog.appendSystemMessage('You haven\'t defined the capture area!')
+
     def keyReleaseEvent(self, event):
         if self.editing_mode:
             if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
-                if self.user_defined_capture_rect is not None:
-                    rect = self.mapFromCanvasToClientScreen(self.user_defined_capture_rect.toRect())
-                    self.connection.sendControlUserDefinedCaptureRect(rect)
-                    self.editing_mode = False
-                else:
-                    chat_dialog.appendSystemMessage('You haven\'t defined the capture area!')
+                self.do_set_user_defined_capture_rect()
         else:
             key_name_attr = self.key_attr_names.get(event.key(), None)
             self.addToKeysLog('up', key_name_attr)
