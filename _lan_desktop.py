@@ -1446,7 +1446,18 @@ class Connection(QObject):
         # if self.isGreetingMessageSent:
         #     if self.socket.isValid():
         #         self.socket.waitForBytesWritten(2000)
-        super().deleteLater()
+
+        pass
+
+        # super().deleteLater() вызов команыд вызывает исключение
+
+        #   File "_lan_desktop.py", line 1942, in disconnected
+        #     self.removeConnection(socket)
+        #   File "_lan_desktop.py", line 1963, in removeConnection
+        #     connection.deleteLater()
+        #   File "_lan_desktop.py", line 1448, in deleteLater
+        #     super().deleteLater()
+        # RuntimeError: wrapped C/C++ object of type Connection has been deleted
 
     class states():
         readSize = 0
