@@ -1049,7 +1049,7 @@ class Portal(QWidget):
                 cursor_already_set = True
         if not cursor_already_set:
             self.define_regions_rects_and_set_cursor()
-        self.update() 
+        self.update()
 
     def isViewportReadyAndCursorInsideViewport(self):
         if self.image_to_show is not None and self.isActiveWindow():
