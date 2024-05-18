@@ -160,4 +160,4 @@ File "_lan_desktop.py", line 1963, in removeConnection
 File "_lan_desktop.py", line 1448, in deleteLater
     super().deleteLater()
 ```
-
+- (18 май 24) доработал функцию переноса области захвата (когда я её внедрял, то я её не дописал толком, и в результате была заблокирована функция переопределения области захвата)

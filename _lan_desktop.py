@@ -1042,11 +1042,13 @@ class Portal(QWidget):
         return self.mapFromGlobal(QCursor().pos())
 
     def get_region_info(self):
+        cursor_already_set = False
         if self.editing_mode_btn_rect is not None:
             if self.editing_mode_btn_rect.contains(self.mapped_cursor_pos()):
                 self.setCursor(Qt.PointingHandCursor)
-            else:
-                self.define_regions_rects_and_set_cursor()
+                cursor_already_set = True
+        if not cursor_already_set:
+            self.define_regions_rects_and_set_cursor()
         self.update() 
 
     def isViewportReadyAndCursorInsideViewport(self):
@@ -1144,11 +1146,12 @@ class Portal(QWidget):
                         set_func = getattr(self.user_defined_capture_rect, set_func_attr)
                         if self.capture_redefine_start_value is None:
                             self.capture_redefine_start_value = get_func()
-                        if data_id == "x":
+                        crsv = self.capture_redefine_start_value
+                        if data_id == "x": # and isinstance(delta, float) and isinstance(crsv, float):
                             set_func(self.capture_redefine_start_value + delta.x())
-                        if data_id == "y":
+                        if data_id == "y": # and isinstance(delta, float) and isinstance(crsv, float):
                             set_func(self.capture_redefine_start_value + delta.y())
-                        if data_id == "xy":
+                        if data_id == "xy": # and isinstance(delta, QPointF) and isinstance(crsv, QPointF):
                             set_func(self.capture_redefine_start_value + delta)
 
                         # необходимо для нормальной работы
@@ -1175,14 +1178,17 @@ class Portal(QWidget):
                     self.editing_mode_btn_rect_pressed = True
                     return
 
-                isCaptureZone = self.user_defined_capture_rect is not None
-                if isCaptureZone:
-                    self.current_capture_zone_center = self.user_defined_capture_rect.center()
-                    self.ocp = event.pos()
-                    self.drag_capture_zone = True
-                    return
-                else:
-                    self.drag_capture_zone = False
+                self.drag_capture_zone = False
+                isCaptureZoneSet = self.user_defined_capture_rect is not None
+                if isCaptureZoneSet:
+                    input_POINT1 = self.mapToViewport(self.input_POINT1)
+                    input_POINT2 = self.mapToViewport(self.input_POINT2)
+                    crr = QRectF(input_POINT1, input_POINT2)
+                    if crr.contains(event.pos()):
+                        self.current_capture_zone_center = self.user_defined_capture_rect.center()
+                        self.ocp = event.pos()
+                        self.drag_capture_zone = True
+                        return
 
                 self.start_cursor_position = self.mapToCanvas(QPointF(event.pos()))
                 self.capture_redefine_start_value = None
@@ -1190,7 +1196,8 @@ class Portal(QWidget):
                 if self.undermouse_region_info is None:
                     self.drag_inside_capture_zone = True
                     if self.user_defined_capture_rect:
-                        self.elementsMousePressEvent(event)
+                        pass
+                        # inside capture rect handling
                 else:
                     self.drag_inside_capture_zone = False
 
