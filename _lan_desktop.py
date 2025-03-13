@@ -42,7 +42,7 @@ from PyQt5.QtNetwork import *
 
 import cbor2
 import pyautogui
-from wakeonlan import send_magic_packet
+from no_dep_wakeonlan import send_magic_packet
 
 
 
