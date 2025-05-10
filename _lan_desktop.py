@@ -2323,7 +2323,6 @@ class ChatDialog(QDialog):
         self.portal_widget = Portal(self)
         self.portal_widget.resize(1200, 1000)
 
-        settings = get_settings()
         allow_remote_control = str_to_bool( get_settings().value('allow_remote_control', bool_to_str(False)) )
         self.remote_control_chb.setChecked(allow_remote_control)
 
