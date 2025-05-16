@@ -1,1 +1,1 @@
-python3 unrefactored_chat.py
+python3 lan_desktop.pyw
