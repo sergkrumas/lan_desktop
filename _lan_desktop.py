@@ -44,7 +44,7 @@ import cbor2
 import pyautogui
 from no_dep_wakeonlan import send_magic_packet
 
-
+import threading
 
 from _utils import (fit_rect_into_rect, build_valid_rectF)
 from update import do_update
@@ -58,10 +58,12 @@ except:
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
+writing_lock = threading.Lock()
+
 class Globals():
 
     DEBUG = True
-    ENABLE_PRINT = False
+    ENABLE_PRINT = True
     DEBUG_VIZ = False
 
     BROADCASTINTERVAL = 2000
@@ -1583,7 +1585,11 @@ class Connection(QObject):
                                     addr = self.socket.peerAddress().toString()
                                     port = self.socket.peerPort()
 
-                                    Globals.update_peers_list(addr, port, mac)
+                                    # print(f'reading thread: {QThread.currentThreadId()}', flush=True)
+                                    # writing_lock.acquire()
+                                    with writing_lock:
+                                        Globals.update_peers_list(addr, port, mac)
+                                    # writing_lock.release()
 
                                     self.username = f'{msg}@{addr}:{port} // {mac}'
 
@@ -2282,7 +2288,7 @@ class ChatDialog(QDialog):
         def trigger_console_output_chb():
             Globals.ENABLE_PRINT = self.ENABLE_PRINT.isChecked()
         self.ENABLE_PRINT.stateChanged.connect(trigger_console_output_chb)
-        self.ENABLE_PRINT.setChecked(False)
+        self.ENABLE_PRINT.setChecked(Globals.ENABLE_PRINT)
 
         self.show_log_keys_chb = QCheckBox('Show keys log')
         hor_layout.addWidget(self.show_log_keys_chb)
@@ -2735,6 +2741,8 @@ def main():
     app = QApplication(args)
 
     init_settings(app)
+
+    # print(f'main thread: {QThread.currentThreadId()}')
 
     Globals.gray_icon = Globals.generate_circle_icon(Qt.gray)
     Globals.green_icon = Globals.generate_circle_icon(Qt.green)
