@@ -369,21 +369,21 @@ class TransparentWidget(QWidget):
         self.keys_log = self.keys_log[:20]
         self.update()
 
-def show_screencast_keys_window(status, key_name):
+    @staticmethod
+    def show_screencast_keys_window(status, key_name):
+        if chat_dialog.show_log_keys_chb.isChecked():
+            if Globals.client_keys_logger is None:
+                Globals.client_keys_logger = TransparentWidget()
+                Globals.client_keys_logger.resize(400, 800)
+                Globals.client_keys_logger.show()
+                rect = Globals.client_keys_logger.geometry()
+                desktop_widget = QDesktopWidget()
+                # кладём окно аккурат над кнопкой «Пуск»
+                rect.moveBottomLeft(desktop_widget.availableGeometry().bottomLeft())
+                Globals.client_keys_logger.setGeometry(rect)
 
-    if chat_dialog.show_log_keys_chb.isChecked():
-        if Globals.client_keys_logger is None:
-            Globals.client_keys_logger = TransparentWidget()
-            Globals.client_keys_logger.resize(400, 800)
-            Globals.client_keys_logger.show()
-            rect = Globals.client_keys_logger.geometry()
-            desktop_widget = QDesktopWidget()
-            # кладём окно аккурат над кнопкой «Пуск»
-            rect.moveBottomLeft(desktop_widget.availableGeometry().bottomLeft())
-            Globals.client_keys_logger.setGeometry(rect)
-
-        Globals.client_keys_logger.addToKeysLog(status, key_name)
-        Globals.client_keys_logger.update()
+            Globals.client_keys_logger.addToKeysLog(status, key_name)
+            Globals.client_keys_logger.update()
 
 
 
@@ -1657,15 +1657,15 @@ class Connection(QObject):
                                             pyautogui.mouseDown(button=mouse_button)
                                         elif mouse_type == 'mouseUp':
                                             pyautogui.mouseUp(button=mouse_button)
-                                            show_screencast_keys_window('up', mouse_button)
+                                            TransparentWidget.show_screencast_keys_window('up', mouse_button)
 
                                         elif mouse_type == 'mouseWheel':
                                             if mouse_value > 0:
                                                 pyautogui.scroll(1)
-                                                show_screencast_keys_window('up', "wheel up")
+                                                TransparentWidget.show_screencast_keys_window('up', "wheel up")
                                             else:
                                                 pyautogui.scroll(-1)
-                                                show_screencast_keys_window('up', "wheel down")
+                                                TransparentWidget.show_screencast_keys_window('up', "wheel down")
 
                                         print(mouse_data)
 
@@ -1681,10 +1681,10 @@ class Connection(QObject):
                                             pyautogui.keyDown(key_value)
                                         elif event_type == 'keyUp':
                                             pyautogui.keyUp(key_value)
-                                            show_screencast_keys_window('up', key_value)
+                                            TransparentWidget.show_screencast_keys_window('up', key_value)
                                         elif event_type == 'keyHotkey':
                                             pyautogui.hotkey(key_value)
-                                            show_screencast_keys_window('up', "+".join(key_value))
+                                            TransparentWidget.show_screencast_keys_window('up', "+".join(key_value))
 
                                 elif self.currentDataType == DataType.FileData:
                                     file_chunk_info = value
