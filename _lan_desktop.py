@@ -1760,7 +1760,7 @@ class Connection(QObject):
                     except Exception as e:
                         raise
                         print(e, 'aborting...')
-                        socket.abort()
+                        self.socket.abort()
 
                         if not self.socket.isValid():
                             self.socket.abort()
