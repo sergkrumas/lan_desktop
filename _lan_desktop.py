@@ -156,9 +156,6 @@ class Globals():
         return QIcon(pixmap)
 
 
-
-
-
 class DataType:
     Undefined = 0
     PlainText = 1
@@ -182,136 +179,138 @@ class ControlRequest:
     Break = 3
 
 
+class Utils:
 
+    @staticmethod
+    def make_capture_frame(capture_index):
+        desktop = QDesktopWidget()
+        MAX = 1000000000
+        left = MAX
+        right = -MAX
+        top = MAX
+        bottom = -MAX
+        for i in range(0, desktop.screenCount()):
+            if capture_index != -1:
+                if i != capture_index:
+                    continue
+            r = desktop.screenGeometry(screen=i)
+            left = min(r.left(), left)
+            right = max(r.right(), right)
+            top = min(r.top(), top)
+            bottom = max(r.bottom(), bottom)
+        if capture_index == -1:
+            capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
+        else:
+            capture_rect = QRect(QPoint(left, top), QPoint(right, bottom))
 
-def make_capture_frame(capture_index):
-    desktop = QDesktopWidget()
-    MAX = 1000000000
-    left = MAX
-    right = -MAX
-    top = MAX
-    bottom = -MAX
-    for i in range(0, desktop.screenCount()):
-        if capture_index != -1:
-            if i != capture_index:
-                continue
-        r = desktop.screenGeometry(screen=i)
-        left = min(r.left(), left)
-        right = max(r.right(), right)
-        top = min(r.top(), top)
-        bottom = max(r.bottom(), bottom)
-    if capture_index == -1:
-        capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
-    else:
-        capture_rect = QRect(QPoint(left, top), QPoint(right, bottom))
+        # print(capture_rect)
+        qimage = QImage(
+            capture_rect.width(),
+            capture_rect.height(),
+            QImage.Format_RGB32
+        )
+        qimage.fill(Qt.black)
 
-    # print(capture_rect)
-    qimage = QImage(
-        capture_rect.width(),
-        capture_rect.height(),
-        QImage.Format_RGB32
-    )
-    qimage.fill(Qt.black)
+        painter = QPainter()
+        painter.begin(qimage)
+        screens = QGuiApplication.screens()
+        if capture_index == -1:
+            for n, screen in enumerate(screens):
+                p = screen.grabWindow(0)
+                source_rect = QRect(QPoint(0, 0), screen.geometry().size())
+                painter.drawPixmap(screen.geometry(), p, source_rect)
+        else:
+            for n, screen in enumerate(screens):
+                if capture_index == n:
+                    painter.drawPixmap(QPoint(0, 0), screen.grabWindow(0))
+                    break
+        painter.end()
 
-    painter = QPainter()
-    painter.begin(qimage)
-    screens = QGuiApplication.screens()
-    if capture_index == -1:
+        return qimage, capture_rect
+
+    @staticmethod
+    def make_user_defined_capture_screenshot(capture_rect):
+        desktop = QDesktopWidget()
+        qimage = QImage(
+            capture_rect.width(),
+            capture_rect.height(),
+            QImage.Format_RGB32
+        )
+        qimage.fill(Qt.black)
+
+        painter = QPainter()
+        painter.begin(qimage)
+        screens = QGuiApplication.screens()
         for n, screen in enumerate(screens):
-            p = screen.grabWindow(0)
-            source_rect = QRect(QPoint(0, 0), screen.geometry().size())
-            painter.drawPixmap(screen.geometry(), p, source_rect)
-    else:
-        for n, screen in enumerate(screens):
-            if capture_index == n:
-                painter.drawPixmap(QPoint(0, 0), screen.grabWindow(0))
-                break
-    painter.end()
+            screen_geometry = screen.geometry()
+            if screen_geometry.intersects(capture_rect):
+                screen_pixmap = screen.grabWindow(0)
+                repos = screen_geometry.topLeft() - capture_rect.topLeft()
+                screen_geometry.moveTopLeft(repos)
+                source_rect = QRect(QPoint(0, 0), screen.geometry().size())
+                painter.drawPixmap(screen_geometry, screen_pixmap, source_rect)
+        painter.end()
+        return qimage
 
-    return qimage, capture_rect
+    @staticmethod
+    def prepare_data_to_write(serial_data, binary_attachment_data):
 
+        if serial_data is not None:
+            serial_binary = cbor2.dumps(serial_data)
+            serial_length = len(serial_binary)
+        else:
+            serial_binary = b''
+            serial_length = 0
 
-def make_user_defined_capture_screenshot(capture_rect):
-    desktop = QDesktopWidget()
-    qimage = QImage(
-        capture_rect.width(),
-        capture_rect.height(),
-        QImage.Format_RGB32
-    )
-    qimage.fill(Qt.black)
+        if binary_attachment_data is not None:
+            bin_binary = binary_attachment_data
+            bin_length = len(binary_attachment_data)
+        else:
+            bin_binary = b''
+            bin_length = 0
+        total_data_length = serial_length + bin_length
+        header = total_data_length.to_bytes(Globals.INT_SIZE, 'big') + serial_length.to_bytes(Globals.INT_SIZE, 'big') + bin_length.to_bytes(Globals.INT_SIZE, 'big')
+        data_to_sent = header + serial_binary + bin_binary
 
-    painter = QPainter()
-    painter.begin(qimage)
-    screens = QGuiApplication.screens()
-    for n, screen in enumerate(screens):
-        screen_geometry = screen.geometry()
-        if screen_geometry.intersects(capture_rect):
-            screen_pixmap = screen.grabWindow(0)
-            repos = screen_geometry.topLeft() - capture_rect.topLeft()
-            screen_geometry.moveTopLeft(repos)
-            source_rect = QRect(QPoint(0, 0), screen.geometry().size())
-            painter.drawPixmap(screen_geometry, screen_pixmap, source_rect)
-    painter.end()
-    return qimage
+        # print('prepare_data_to_write', serial_data)
 
+        return data_to_sent
 
+    @staticmethod
+    def prepare_screenshot_to_transfer(connection):
 
+        if connection.capture_index == -2:
+            capture_rect = connection.user_defined_capture_rect
+            image = Utils.make_user_defined_capture_screenshot(capture_rect)
+        else:
+            screens_count = len(QGuiApplication.screens())
+            if connection.capture_index+1 > screens_count:
+                connection.capture_index = 0
+            image, capture_rect = Utils.make_capture_frame(connection.capture_index)
 
-def prepare_data_to_write(serial_data, binary_attachment_data):
+        byte_array = QByteArray()
+        buffer = QBuffer(byte_array)
+        buffer.open(QIODevice.WriteOnly)
+        # image.save(buffer, "jpg", quality=20)
+        # image.save(buffer, "jpg")
+        image.save(buffer, Globals.IMAGE_FORMAT, quality=50)
 
-    if serial_data is not None:
-        serial_binary = cbor2.dumps(serial_data)
-        serial_length = len(serial_binary)
-    else:
-        serial_binary = b''
-        serial_length = 0
+        capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.width(), capture_rect.height()]
 
-    if binary_attachment_data is not None:
-        bin_binary = binary_attachment_data
-        bin_length = len(binary_attachment_data)
-    else:
-        bin_binary = b''
-        bin_length = 0
-    total_data_length = serial_length + bin_length
-    header = total_data_length.to_bytes(Globals.INT_SIZE, 'big') + serial_length.to_bytes(Globals.INT_SIZE, 'big') + bin_length.to_bytes(Globals.INT_SIZE, 'big')
-    data_to_sent = header + serial_binary + bin_binary
+        serial_data = {DataType.ScreenData: {
+            'rect': capture_rect_tuple,
+            'capture_index': connection.capture_index,
+            'screens_count': len(QGuiApplication.screens()),
+        }}
 
-    # print('prepare_data_to_write', serial_data)
+        return Utils.prepare_data_to_write(serial_data, byte_array.data())
 
-    return data_to_sent
-
-
-
-
-def prepare_screenshot_to_transfer(connection):
-
-    if connection.capture_index == -2:
-        capture_rect = connection.user_defined_capture_rect
-        image = make_user_defined_capture_screenshot(capture_rect)
-    else:
-        screens_count = len(QGuiApplication.screens())
-        if connection.capture_index+1 > screens_count:
-            connection.capture_index = 0
-        image, capture_rect = make_capture_frame(connection.capture_index)
-
-    byte_array = QByteArray()
-    buffer = QBuffer(byte_array)
-    buffer.open(QIODevice.WriteOnly)
-    # image.save(buffer, "jpg", quality=20)
-    # image.save(buffer, "jpg")
-    image.save(buffer, Globals.IMAGE_FORMAT, quality=50)
-
-    capture_rect_tuple = [capture_rect.left(), capture_rect.top(), capture_rect.width(), capture_rect.height()]
-
-    serial_data = {DataType.ScreenData: {
-        'rect': capture_rect_tuple,
-        'capture_index': connection.capture_index,
-        'screens_count': len(QGuiApplication.screens()),
-    }}
-
-    return prepare_data_to_write(serial_data, byte_array.data())
-
-
+    @staticmethod
+    def prepare_data_to_UDP(data_obj):
+        data = cbor2.dumps(data_obj)
+        data_length = len(data)
+        data_to_sent = data_length.to_bytes(4, 'big') + data
+        return data_to_sent
 
 
 
@@ -469,7 +468,7 @@ class Portal(QWidget):
         def send_hotkey(hotkey_list):
             data_key = 'keyHotkey'
             key_data_dict = {DataType.KeyboardData: {data_key: hotkey_list}}
-            self.connection.socket.write(prepare_data_to_write(key_data_dict, None))
+            self.connection.socket.write(Utils.prepare_data_to_write(key_data_dict, None))
         for text, args in keyboard_send_actions_data:
             action = QAction(text, self)
             action.triggered.connect(partial(send_hotkey, args))
@@ -946,7 +945,7 @@ class Portal(QWidget):
             if self.isViewportReadyAndCursorInsideViewport():
                 x, y = self.mapViewportToClient()
                 mouse_data_dict = {DataType.MouseData: {'mousePos': [x, y]}}
-                self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+                self.connection.socket.write(Utils.prepare_data_to_write(mouse_data_dict, None))
 
     def mouseAnimationTimerHandler(self):
         self.update()
@@ -1223,7 +1222,7 @@ class Portal(QWidget):
             elif event.button() == Qt.MiddleButton:
                 mouse_button = 'middle'
             mouse_data_dict = {DataType.MouseData: {data_key: mouse_button}}
-            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+            self.connection.socket.write(Utils.prepare_data_to_write(mouse_data_dict, None))
 
     def mouseReleaseEvent(self, event):
         alt = event.modifiers() & Qt.AltModifier
@@ -1266,7 +1265,7 @@ class Portal(QWidget):
             elif event.button() == Qt.MiddleButton:
                 mouse_button = 'middle'
             mouse_data_dict = {DataType.MouseData: {data_key: mouse_button}}
-            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+            self.connection.socket.write(Utils.prepare_data_to_write(mouse_data_dict, None))
 
     def wheelEvent(self, event):
         scroll_value = event.angleDelta().y()/240
@@ -1279,14 +1278,14 @@ class Portal(QWidget):
         else:
             data_key = 'mouseWheel'
             mouse_data_dict = {DataType.MouseData: {data_key: scroll_value}}
-            self.connection.socket.write(prepare_data_to_write(mouse_data_dict, None))
+            self.connection.socket.write(Utils.prepare_data_to_write(mouse_data_dict, None))
 
     def sendKeyData(self, event, data_key):
         pyautogui_arg = self.translateQtKeyEventDataToPyautoguiArgumentValue(event)
         if pyautogui_arg:
             key_data_dict = {DataType.KeyboardData: {data_key: pyautogui_arg}}
             print(key_data_dict)
-            self.connection.socket.write(prepare_data_to_write(key_data_dict, None))
+            self.connection.socket.write(Utils.prepare_data_to_write(key_data_dict, None))
         else:
             self.triggerKeyTranslationError()
 
@@ -1395,7 +1394,7 @@ class FileTransfer(QTimer):
                             f' на адрес {conn.socket.peerAddress().toString()}'
                 chat_dialog.appendSystemMessage(msg)
 
-                conn.socket.write(prepare_data_to_write(serial_data, binary_data))
+                conn.socket.write(Utils.prepare_data_to_write(serial_data, binary_data))
 
         else:
             self.stop()
@@ -1531,7 +1530,7 @@ class Connection(QObject):
     def sendMessage(self, message):
         if not message:
             return False
-        self.socket.write(prepare_data_to_write({DataType.PlainText: message}, None))
+        self.socket.write(Utils.prepare_data_to_write({DataType.PlainText: message}, None))
         return True
 
     def processReadyRead(self):
@@ -1786,7 +1785,7 @@ class Connection(QObject):
     def sendScreenshot(self):
 
         if chat_dialog.remote_control_chb.isChecked() and self.control_connection:
-            data = prepare_screenshot_to_transfer(self)
+            data = Utils.prepare_screenshot_to_transfer(self)
             print(f'sending screenshot... message size: {len(data)}')
             self.socket.write(data)
             self.socket.flush()
@@ -1806,33 +1805,33 @@ class Connection(QObject):
         chat_dialog.appendSystemMessage(msg)
         status = chat_dialog.retrieve_status()
         self.socket.write(
-            prepare_data_to_write({DataType.Greeting: {'msg': self.greetingMessage, 'mac': mac_address, 'status': status}}, None)
+            Utils.prepare_data_to_write({DataType.Greeting: {'msg': self.greetingMessage, 'mac': mac_address, 'status': status}}, None)
         )
         self.isGreetingMessageSent = True
 
     def sendControlFPS(self, value):
-        data = prepare_data_to_write({DataType.ControlFPS: {'fps': value}}, None)
+        data = Utils.prepare_data_to_write({DataType.ControlFPS: {'fps': value}}, None)
         self.socket.write(data)
 
     def sendControlUserDefinedCaptureRect(self, rect_value):
         rect_tuple = (rect_value.left(), rect_value.top(), rect_value.width(), rect_value.height())
-        data = prepare_data_to_write({DataType.ControlUserDefinedCaptureRect: {'rect': rect_tuple}}, None)
+        data = Utils.prepare_data_to_write({DataType.ControlUserDefinedCaptureRect: {'rect': rect_tuple}}, None)
         self.socket.write(data)
 
     def sendControlCaptureScreen(self, capture_index):
-        data = prepare_data_to_write({DataType.ControlCaptureScreen: capture_index}, None)
+        data = Utils.prepare_data_to_write({DataType.ControlCaptureScreen: capture_index}, None)
         self.socket.write(data)
 
     def sendStatus(self, status):
-        data = prepare_data_to_write({DataType.InfoStatus: status}, None)
+        data = Utils.prepare_data_to_write({DataType.InfoStatus: status}, None)
         self.socket.write(data)
 
     def requestControlPortal(self):
-        data = prepare_data_to_write({DataType.ControlRequest: ControlRequest.GiveMeControl}, None)
+        data = Utils.prepare_data_to_write({DataType.ControlRequest: ControlRequest.GiveMeControl}, None)
         self.socket.write(data)
 
     def sendControlRequestAnswer(self, value):
-        data = prepare_data_to_write({DataType.ControlRequest: value}, None)
+        data = Utils.prepare_data_to_write({DataType.ControlRequest: value}, None)
         self.socket.write(data)
 
 
@@ -2110,15 +2109,8 @@ class PeerManager(QObject):
 
     def sendBroadcastDatagram(self):
 
-
-        def prepare_data_to_write(data_obj):
-            data = cbor2.dumps(data_obj)
-            data_length = len(data)
-            data_to_sent = data_length.to_bytes(4, 'big') + data
-            return data_to_sent
-
         data_obj = [self.username, self.serverPort]
-        datagram = prepare_data_to_write(data_obj)
+        datagram = Utils.prepare_data_to_UDP(data_obj)
 
         validBroadcastAddresses = True
 
