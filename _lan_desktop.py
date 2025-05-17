@@ -2659,6 +2659,31 @@ class ChatDialog(QDialog):
 
 
 
+class SettingsUtil:
+
+    @staticmethod
+    def init_settings(app):
+
+        QCoreApplication.setOrganizationName("Sergei Krumas");
+        QCoreApplication.setOrganizationDomain("sergei-krumas.com");
+        QCoreApplication.setApplicationName("LAN-DESKTOP");
+
+        filepath = os.path.join(os.path.dirname(__file__), f'lan_desktop.{platform.system()}.settings')
+        Globals.settings = QSettings(filepath, QSettings.IniFormat)
+
+    @staticmethod
+    def get_settings():
+        return Globals.settings
+
+    @staticmethod
+    def bool_to_str(x):
+        return str(int(x))
+
+    @staticmethod
+    def str_to_bool(x):
+        return bool(int(x))
+
+
 
 def show_system_tray(app, icon):
     sti = QSystemTrayIcon(app)
@@ -2714,29 +2739,7 @@ def excepthook(exc_type, exc_value, exc_tb):
             stray_icon.hide()
     sys.exit()
 
-class SettingsUtil:
 
-    @staticmethod
-    def init_settings(app):
-
-        QCoreApplication.setOrganizationName("Sergei Krumas");
-        QCoreApplication.setOrganizationDomain("sergei-krumas.com");
-        QCoreApplication.setApplicationName("LAN-DESKTOP");
-
-        filepath = os.path.join(os.path.dirname(__file__), f'lan_desktop.{platform.system()}.settings')
-        Globals.settings = QSettings(filepath, QSettings.IniFormat)
-
-    @staticmethod
-    def get_settings():
-        return Globals.settings
-
-    @staticmethod
-    def bool_to_str(x):
-        return str(int(x))
-
-    @staticmethod
-    def str_to_bool(x):
-        return bool(int(x))
 
 def main():
 
