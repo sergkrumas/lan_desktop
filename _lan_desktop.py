@@ -56,6 +56,13 @@ except:
     add_to_startup = None
     remove_from_startup = None
 
+
+
+def print(*args, **kwargs):
+    if Globals.ENABLE_PRINT:
+        builtins.print(*args, **kwargs)
+
+
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
 
 writing_lock = threading.Lock()
@@ -151,9 +158,6 @@ class Globals():
 
 
 
-def print(*args, **kwargs):
-    if Globals.ENABLE_PRINT:
-        builtins.print(*args, **kwargs)
 
 class DataType:
     Undefined = 0
