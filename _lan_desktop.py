@@ -182,6 +182,9 @@ class ControlRequest:
     Granted = 2
     Break = 3
 
+class RemoteControlStatus:
+    FOLLOW = 'follow'
+    LEAD = 'lead'
 
 class Utils:
 
@@ -2485,9 +2488,9 @@ class ChatDialog(QDialog):
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
-            status = 'follower'
+            status = RemoteControlStatus.FOLLOW
         else:
-            status = 'leader'
+            status = RemoteControlStatus.LEAD
         return status
 
     def remote_control_state_changed(self):
@@ -2605,7 +2608,7 @@ class ChatDialog(QDialog):
 
                 for item in items_to_delete:
                     self.peersList.takeItem(self.peersList.row(item))
-                if connection.status == 'leader':
+                if connection.status == RemoteControlStatus.LEAD:
                     icon = Globals.red_icon
 
         if is_remote:
