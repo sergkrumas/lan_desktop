@@ -64,6 +64,8 @@ def print(*args, **kwargs):
 
 
 RegionInfo = namedtuple('RegionInfo', 'setter coords getter')
+PeerListItemData = namedtuple('PeerListItemData', 'is_remote ip mac')
+
 
 writing_lock = threading.Lock()
 
@@ -98,6 +100,8 @@ class Globals():
 
     reading_framerate = ''
     writing_framerate = ''
+
+    IP_MAC_SEP = ' // '
 
     @classmethod
     def calculate_reading_framerate(cls):
@@ -2274,11 +2278,11 @@ class ChatDialog(QDialog):
         self.textEdit = QTextEdit()
         self.textEdit.setFocusPolicy(Qt.NoFocus)
 
-        self.listWidget = QListWidget()
-        self.listWidget.setFocusPolicy(Qt.NoFocus)
+        self.peersList = QListWidget()
+        self.peersList.setFocusPolicy(Qt.NoFocus)
 
         self.textEdit.setMinimumSize(350, 400)
-        self.listWidget.setMinimumSize(350, 400)
+        self.peersList.setMinimumSize(350, 400)
 
         hor_layout = QHBoxLayout()
 
@@ -2345,7 +2349,7 @@ class ChatDialog(QDialog):
         splt.addWidget(self.textEdit)
         splt.addWidget(self.portal_widget)
         self.portal_widget.resize(0, self.portal_widget.height())
-        splt.addWidget(self.listWidget)
+        splt.addWidget(self.peersList)
         layout_h.addWidget(splt)
         self.splt = splt
 
@@ -2368,7 +2372,7 @@ class ChatDialog(QDialog):
         self.lineEdit.setFocusPolicy(Qt.StrongFocus)
 
         for w in [self.textEdit,
-                    self.listWidget,
+                    self.peersList,
                     self.openPortalBtn,
                     self.wakeOnLanButton,
                     self.testButton,
@@ -2391,8 +2395,7 @@ class ChatDialog(QDialog):
         QTimer.singleShot(10 * 1000, self.showInformation)
 
         for ip, mac in Globals.read_peers_list().items():
-            item = QListWidgetItem(Globals.gray_icon, f' {ip} // {mac}')
-            self.listWidget.addItem(item)
+            self.add_peerlist_item(ip, mac)
 
         self.resize(1200, 800)
 
@@ -2409,6 +2412,15 @@ class ChatDialog(QDialog):
         self.remote_control_chb.stateChanged.connect(self.remote_control_state_changed)
 
         self.setWindowFlags(Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
+
+    def add_peerlist_item(self, ip, mac, name=None, is_remote=True, icon=None):
+        if icon is None:
+            icon = Globals.gray_icon
+        if name is None:
+            name = f' {ip}{Globals.IP_MAC_SEP}{mac}'
+        item = QListWidgetItem(icon, name)
+        item.setData(Qt.UserRole, PeerListItemData(is_remote, ip, mac))
+        self.peersList.addItem(item)
 
     def prepare_portal(self):
         self.splt.setSizes([300, 400, 300])
@@ -2434,34 +2446,41 @@ class ChatDialog(QDialog):
             self.portal_off()
             return
 
-        item = self.listWidget.currentItem()
+        item = self.peersList.currentItem()
         if not item:
-            self.appendSystemMessage('Не выбран пир в списке для подключения!')
+            self.appendSystemMessage('First select any peer in the list!')
         else:
-            item_text = item.text()
-            splitter = " // "
-            if splitter not in item_text:
-                self.appendSystemMessage('Невозможно подключиться к самому себе, ты шо, ёбобо?')
+            item_data = item.data(Qt.UserRole)
+
+            if not item_data.is_remote:
+                self.appendSystemMessage('There\'s no point trying to connect to yourself!')
                 return
 
-            item_text = item_text[item_text.index(':'):item_text.index('/')-1]
-
-            if item_text.rfind(":") > item_text.rfind("."):
-                # убираем порт из адреса, если он присутствует
-                item_text = item_text[:item_text.rfind(":")]
-
-            ip_adress_ipv6 = item_text.strip()
-            # builtins.print(f'selected address {ip_adress_ipv6}')
+            ip_address_ipv6 = item_data.ip
+            # builtins.print(f'selected address {ip_address_ipv6}')
             connection = None
             for peerAddress, peerConn in self.client.peers.items():
-                if peerAddress.toString() == ip_adress_ipv6:
+                if peerAddress.toString() == ip_address_ipv6:
                     connection = peerConn
                     break
             if connection is None:
-                self.appendSystemMessage('Не найден в списке активных пиров!')
+                self.appendSystemMessage('No any active connection found for the selected peer!')
             else:
                 connection.requestControlPortal()
                 self.disconnect_data = connection
+
+    def do_wake_on_lan(self):
+        item = self.peersList.currentItem()
+        if item:
+            item_data = item.data(Qt.UserRole)
+            if item_data.is_remote:
+                mac = item_data.mac
+                send_magic_packet(mac, ip_address='192.168.0.255')
+                self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}')
+            else:
+                self.appendSystemMessage(f'WakeOnLAN: your computer is on already!')
+        else:
+            self.appendSystemMessage(f'WakeOnLAN: no any peer selected')
 
     def retrieve_status(self):
         if self.remote_control_chb.isChecked():
@@ -2501,7 +2520,7 @@ class ChatDialog(QDialog):
 
     def update_app(self):
         ret = QMessageBox.question(None,
-            "Вопрос", "Download update from repository ans install?",
+            "Вопрос", "Download update from repository and install?",
             QMessageBox.Yes | QMessageBox.No | QMessageBox.Close,
         )
         if ret == QMessageBox.Yes:
@@ -2510,19 +2529,6 @@ class ChatDialog(QDialog):
                 self.print_to_chat(f'reboot in {n}')
                 time.sleep(1)
             self.reboot_app()
-
-    def do_wake_on_lan(self):
-        item = self.listWidget.currentItem()
-        if item:
-            item_text = item.text()
-            splitter = " // "
-            if splitter in item_text:
-                mac = item_text.split()[-1]
-                mac = mac.strip().lower()
-                send_magic_packet(mac, ip_address='192.168.0.255')
-                self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}')
-                return
-        self.appendSystemMessage(f'WakeOnLAN: no any peer selected')
 
     def allow_system_msgs_handler(self):
         state = self.allow_system_msgs_chb.isChecked()
@@ -2576,53 +2582,60 @@ class ChatDialog(QDialog):
         if not nick:
             return
 
+        color = self.textEdit.textColor()
+        self.textEdit.setTextColor(Qt.gray)
+        self.textEdit.append("* %s has joined" % nick)
+        self.textEdit.setTextColor(color)
+
+        is_remote = False
         icon = Globals.green_icon
         if connection is not None:
+            is_remote = True
             socket = connection.socket
             if socket is not None:
                 # removing [inactive] item
                 items_to_delete = []
                 peer_addr = socket.peerAddress().toString()
 
-                for n in range(self.listWidget.count()):
-                    item = self.listWidget.item(n)
+                for n in range(self.peersList.count()):
+                    item = self.peersList.item(n)
                     if peer_addr in item.text():
                         items_to_delete.append(item)
 
                 for item in items_to_delete:
-                    self.listWidget.takeItem(self.listWidget.row(item))
+                    self.peersList.takeItem(self.peersList.row(item))
                 if connection.status == 'leader':
                     icon = Globals.red_icon
 
-
-        color = self.textEdit.textColor()
-        self.textEdit.setTextColor(Qt.gray)
-        self.textEdit.append("* %s has joined" % nick)
-        self.textEdit.setTextColor(color)
-        item = QListWidgetItem(icon, nick)
-        self.listWidget.addItem(item)
+        if is_remote:
+            ip = socket.peerAddress().toString()
+            mac = None
+            name = None
+        else:
+            ip = None
+            mac = None
+            name = f'(This is you) {nick}'
+        self.add_peerlist_item(ip, mac, name=name, is_remote=is_remote, icon=icon)
 
     def participantLeft(self, nick):
         if not nick:
             return
-        items = self.listWidget.findItems(nick, Qt.MatchExactly)
-        item = items[0]
+        items = self.peersList.findItems(nick, Qt.MatchExactly)
+        if items:
+            item = items[0]
+            self.peersList.takeItem(self.peersList.row(item))
 
-        if not items:
-            return
-        self.listWidget.takeItem(self.listWidget.row(item))
+            item = QListWidgetItem(Globals.gray_icon, item.text())
+            self.peersList.addItem(item)
 
-        item = QListWidgetItem(Globals.gray_icon, item.text())
-        self.listWidget.addItem(item)
-
-        color = self.textEdit.textColor()
-        self.textEdit.setTextColor(Qt.gray)
-        self.textEdit.append("* %s has left" % nick)
-        self.textEdit.setTextColor(color)
+            color = self.textEdit.textColor()
+            self.textEdit.setTextColor(Qt.gray)
+            self.textEdit.append("* %s has left" % nick)
+            self.textEdit.setTextColor(color)
 
     def showInformation(self):
         return
-        # if self.listWidget.count() == 1:
+        # if self.peersList.count() == 1:
         #     QMessageBox.information(self, "Chat", "Launch several instances of this program on your local network and start chatting!")
     def closeEvent(self, event):
         # не совсем корректно, но пока так оставлю
