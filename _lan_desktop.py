@@ -1576,6 +1576,8 @@ class Connection(QObject):
 
         self.control_connection = False
 
+        self.mac = None
+
     def remove_occupato_flag_if_needed(self):
         if self.control_connection:
             Globals.OCCUPATO = False
@@ -1654,6 +1656,7 @@ class Connection(QObject):
                                         Globals.update_peers_list(addr, port, mac)
 
                                     self.username = f'{msg}@{addr}:{port} // {mac}'
+                                    self.mac = mac
 
                                     if not self.isGreetingMessageSent:
                                         self.sendGreetingMessage()
@@ -2607,7 +2610,7 @@ class ChatDialog(QDialog):
 
         if is_remote:
             ip = socket.peerAddress().toString()
-            mac = None
+            mac = connection.mac
             name = None
         else:
             ip = None
