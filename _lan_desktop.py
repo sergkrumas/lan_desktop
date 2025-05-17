@@ -1831,12 +1831,6 @@ class Connection(QObject):
         data = prepare_data_to_write({DataType.ControlRequest: value}, None)
         self.socket.write(data)
 
-def find_mac_for_local_socket_addr(local_address_string):
-    for ip_addr, mac in retrieve_ip_mac_pairs():
-        if local_address_string.endswith(ip_addr):
-            return mac
-    return 'Fuck! This is a disaster! MAC not found!'
-
 
 def retrieve_ip_mac_pairs():
     ip_mac_pairs = []
@@ -1854,6 +1848,14 @@ def retrieve_ip_mac_pairs():
             ip_mac_pairs.append((current_ip.toString(), interface.hardwareAddress()))
 
     return ip_mac_pairs
+
+def find_mac_for_local_socket_addr(local_address_string):
+    for ip_addr, mac in retrieve_ip_mac_pairs():
+        if local_address_string.endswith(ip_addr):
+            return mac
+    return 'Fuck! This is a disaster! MAC not found!'
+
+
 
 
 
