@@ -311,43 +311,7 @@ def prepare_screenshot_to_transfer(connection):
 
 
 
-def draw_key_log(self, painter):
-    font = painter.font()
-    font.setPixelSize(20)
-    painter.setFont(font)
 
-    pos = self.rect().bottomLeft() + QPoint(20, -20)
-
-    for n, log_entry in enumerate(self.keys_log):
-        status, key_value = log_entry
-        if status == 'down':
-            out = 'Зажата '
-        elif status == 'up':
-            out = 'Отпущена '
-        if key_value is not None:
-            if key_value.startswith('Key_'):
-                key_name = key_value[4:]
-            else:
-                key_name = key_value
-
-            msg = out + key_name + f' ({key_value})'
-        else:
-            msg = out + str(key_value)
-        r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
-        if n == 0:
-            factor = 0
-        else:
-            factor = 1
-        pos += QPoint(0, factor*-r.height())
-        r.moveBottomLeft(pos)
-
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QBrush(Qt.black))
-        painter.setOpacity(0.8)
-        painter.drawRect(r)
-        painter.setPen(Qt.white)
-        painter.setOpacity(1.0)
-        painter.drawText(pos, msg)
 
 class TransparentWidget(QWidget):
     def __init__(self):
@@ -361,13 +325,51 @@ class TransparentWidget(QWidget):
         painter = QPainter()
         painter.begin(self)
         painter.fillRect(self.rect(), QColor(50, 50, 50, 200))
-        draw_key_log(self, painter)
+        self.draw_keys_log(painter)
         painter.end()
 
     def addToKeysLog(self, status, key_attr_name):
         self.keys_log.insert(0, (status, key_attr_name))
         self.keys_log = self.keys_log[:20]
         self.update()
+
+    def draw_keys_log(self, painter):
+        font = painter.font()
+        font.setPixelSize(20)
+        painter.setFont(font)
+
+        pos = self.rect().bottomLeft() + QPoint(20, -20)
+
+        for n, log_entry in enumerate(self.keys_log):
+            status, key_value = log_entry
+            if status == 'down':
+                out = 'Зажата '
+            elif status == 'up':
+                out = 'Отпущена '
+            if key_value is not None:
+                if key_value.startswith('Key_'):
+                    key_name = key_value[4:]
+                else:
+                    key_name = key_value
+
+                msg = out + key_name + f' ({key_value})'
+            else:
+                msg = out + str(key_value)
+            r = painter.boundingRect(QRect(), Qt.AlignLeft, msg)
+            if n == 0:
+                factor = 0
+            else:
+                factor = 1
+            pos += QPoint(0, factor*-r.height())
+            r.moveBottomLeft(pos)
+
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(Qt.black))
+            painter.setOpacity(0.8)
+            painter.drawRect(r)
+            painter.setPen(Qt.white)
+            painter.setOpacity(1.0)
+            painter.drawText(pos, msg)
 
     @staticmethod
     def show_screencast_keys_window(status, key_name):
@@ -801,7 +803,7 @@ class Portal(QWidget):
                 self.animation_timer.stop()
 
             if self.show_log_keys:
-                draw_key_log(self, painter)
+                TransparentWidget.draw_keys_log(self, painter)
 
             text = Globals.reading_framerate
             if not self.disconnect:
