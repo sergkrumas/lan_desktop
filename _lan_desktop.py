@@ -34,6 +34,7 @@ import traceback
 import locale
 import ctypes
 import webbrowser
+import ipaddress
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -2473,14 +2474,24 @@ class ChatDialog(QDialog):
                 connection.requestControlPortal()
                 self.disconnect_data = connection
 
+    def make_broadcast_address(self, ip_address):
+        """
+            ip_address: `::ffff:192.168.0.40`
+            return: `192.168.0.255`
+        """
+        bytes_str = ipaddress.ip_address(ip_address).ipv4_mapped.compressed.split('.')
+        bytes_str[-1] = '255'
+        return '.'.join(bytes_str)
+
     def do_wake_on_lan(self):
         item = self.peersList.currentItem()
         if item:
             item_data = item.data(Qt.UserRole)
             if item_data.is_remote:
                 mac = item_data.mac
-                send_magic_packet(mac, ip_address='192.168.0.255')
-                self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}')
+                broadcast_address = self.make_broadcast_address(item_data.ip)
+                send_magic_packet(mac, ip_address=broadcast_address)
+                self.appendSystemMessage(f'WakeOnLAN: packet sent to {mac}, broadcast address: {broadcast_address}')
             else:
                 self.appendSystemMessage(f'WakeOnLAN: your computer is on already!')
         else:

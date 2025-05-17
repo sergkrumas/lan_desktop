@@ -166,3 +166,4 @@ File "_lan_desktop.py", line 1448, in deleteLater
     - в качестве фикса решил залочить вызов `Globals.update_peers_list`, теперь таких ситуаций происходить не должно
     - однако, что интересно, проблема ушла до того, как я поставил лок
 - (17 май 25) хотел было перевести все print'ы на модуль logging, но вспомнил, что на print'ах построена уже целая система блокировки вывода из стандартного потока. Таки что здесь обойдусь без logging
+- (17 май 25) wakeonlan fixed: getting broadcast address from remote ip, not hardcoded one
