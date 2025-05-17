@@ -312,6 +312,61 @@ class Utils:
         data_to_sent = data_length.to_bytes(4, 'big') + data
         return data_to_sent
 
+    @staticmethod
+    def retrieve_ip_mac_pairs():
+        ip_mac_pairs = []
+        interfaces = QNetworkInterface.allInterfaces()
+        for interface in interfaces:
+            entries = interface.addressEntries()
+
+            current_ip = None
+            for entry in entries:
+                broadcastAddress = entry.broadcast()
+                if broadcastAddress != QHostAddress.Null and entry.ip() != QHostAddress.LocalHost:
+                    current_ip = entry.ip()
+
+            if not interface.flags() & QNetworkInterface.IsLoopBack:
+                ip_mac_pairs.append((current_ip.toString(), interface.hardwareAddress()))
+
+        return ip_mac_pairs
+
+    @staticmethod
+    def find_mac_for_local_socket_addr(local_address_string):
+        for ip_addr, mac in Utils.retrieve_ip_mac_pairs():
+            if local_address_string.endswith(ip_addr):
+                return mac
+        return 'Fuck! This is a disaster! MAC not found!'
+
+    @staticmethod
+    def socket_info_to_chat(intro, socket):
+        send_size = socket.socketOption(QAbstractSocket.SendBufferSizeSocketOption)
+        receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
+        buffer_size = socket.readBufferSize()
+
+        msg1 = f'1 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
+
+        socket.setSocketOption(QAbstractSocket.SendBufferSizeSocketOption, 200000)
+        socket.setSocketOption(QAbstractSocket.ReceiveBufferSizeSocketOption, 200000)
+
+        socket.setSocketOption(QAbstractSocket.LowDelayOption, 1)
+        socket.setReadBufferSize(157000)
+
+        # Immediate = 64
+        Network_control = 224
+        socket.setSocketOption(QAbstractSocket.TypeOfServiceOption, Network_control)
+
+        send_size = socket.socketOption(QAbstractSocket.SendBufferSizeSocketOption)
+        receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
+        buffer_size = socket.readBufferSize()
+
+        msg2 = f'2 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
+
+        local_address_string = socket.localAddress().toString()
+        peer_address_string = socket.peerAddress().toString()
+        msg3 = f'socket local address {local_address_string}, socket peer address {peer_address_string}'
+
+        msg = '\n'.join((msg1, msg2, msg3))
+        chat_dialog.appendSystemMessage(msg)
 
 
 
@@ -1799,7 +1854,7 @@ class Connection(QObject):
         peer_address_string = self.socket.peerAddress().toString()
         local_address_string = self.socket.localAddress().toString()
 
-        mac_address = find_mac_for_local_socket_addr(local_address_string)
+        mac_address = Utils.find_mac_for_local_socket_addr(local_address_string)
         msg = f'i\'m {local_address_string} sending greetings message to {peer_address_string}'
 
         chat_dialog.appendSystemMessage(msg)
@@ -1835,28 +1890,7 @@ class Connection(QObject):
         self.socket.write(data)
 
 
-def retrieve_ip_mac_pairs():
-    ip_mac_pairs = []
-    interfaces = QNetworkInterface.allInterfaces()
-    for interface in interfaces:
-        entries = interface.addressEntries()
 
-        current_ip = None
-        for entry in entries:
-            broadcastAddress = entry.broadcast()
-            if broadcastAddress != QHostAddress.Null and entry.ip() != QHostAddress.LocalHost:
-                current_ip = entry.ip()
-
-        if not interface.flags() & QNetworkInterface.IsLoopBack:
-            ip_mac_pairs.append((current_ip.toString(), interface.hardwareAddress()))
-
-    return ip_mac_pairs
-
-def find_mac_for_local_socket_addr(local_address_string):
-    for ip_addr, mac in retrieve_ip_mac_pairs():
-        if local_address_string.endswith(ip_addr):
-            return mac
-    return 'Fuck! This is a disaster! MAC not found!'
 
 
 
@@ -1882,7 +1916,7 @@ class MessageServer(QTcpServer):
         client_socket = server.nextPendingConnection()
         connection = Connection(None, client_socket=client_socket)
 
-        socket_info_to_chat('new user has knocked', client_socket)
+        Utils.socket_info_to_chat('new user has knocked', client_socket)
 
         self.new_connection_handler(connection)
 
@@ -2151,7 +2185,7 @@ class PeerManager(QObject):
                 socket.waitForConnected()
 
                 connection = Connection(self, client_socket=socket)
-                socket_info_to_chat('new peer added', socket)
+                Utils.socket_info_to_chat('new peer added', socket)
 
 
                 global connections_to_servers
@@ -2173,35 +2207,7 @@ class PeerManager(QObject):
                     self.ipAddresses.append(entry.ip())
 
 
-def socket_info_to_chat(intro, socket):
-    send_size = socket.socketOption(QAbstractSocket.SendBufferSizeSocketOption)
-    receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
-    buffer_size = socket.readBufferSize()
 
-    msg1 = f'1 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
-
-    socket.setSocketOption(QAbstractSocket.SendBufferSizeSocketOption, 200000)
-    socket.setSocketOption(QAbstractSocket.ReceiveBufferSizeSocketOption, 200000)
-
-    socket.setSocketOption(QAbstractSocket.LowDelayOption, 1)
-    socket.setReadBufferSize(157000)
-
-    # Immediate = 64
-    Network_control = 224
-    socket.setSocketOption(QAbstractSocket.TypeOfServiceOption, Network_control)
-
-    send_size = socket.socketOption(QAbstractSocket.SendBufferSizeSocketOption)
-    receive_size = socket.socketOption(QAbstractSocket.ReceiveBufferSizeSocketOption)
-    buffer_size = socket.readBufferSize()
-
-    msg2 = f'2 {intro}, receive buffer {receive_size} bytes, send buffer {send_size} bytes, buffer size {buffer_size}'
-
-    local_address_string = socket.localAddress().toString()
-    peer_address_string = socket.peerAddress().toString()
-    msg3 = f'socket local address {local_address_string}, socket peer address {peer_address_string}'
-
-    msg = '\n'.join((msg1, msg2, msg3))
-    chat_dialog.appendSystemMessage(msg)
 
 
 class ChatDialog(QDialog):
