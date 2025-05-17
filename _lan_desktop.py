@@ -2329,10 +2329,10 @@ class ChatDialog(QDialog):
         self.portal_widget = Portal(self)
         self.portal_widget.resize(1200, 1000)
 
-        allow_remote_control = str_to_bool( get_settings().value('allow_remote_control', bool_to_str(False)) )
+        allow_remote_control = SettingsUtil.str_to_bool( SettingsUtil.get_settings().value('allow_remote_control', SettingsUtil.bool_to_str(False)) )
         self.remote_control_chb.setChecked(allow_remote_control)
 
-        allow_system_msgs = str_to_bool( get_settings().value('allow_system_msgs', bool_to_str(True)) )
+        allow_system_msgs = SettingsUtil.str_to_bool( SettingsUtil.get_settings().value('allow_system_msgs', SettingsUtil.bool_to_str(True)) )
         self.allow_system_msgs_chb.setChecked(allow_system_msgs)
 
         splt = QSplitter(Qt.Horizontal)
@@ -2465,7 +2465,7 @@ class ChatDialog(QDialog):
         return status
 
     def remote_control_state_changed(self):
-        get_settings().setValue('allow_remote_control', bool_to_str(self.remote_control_chb.isChecked()))
+        SettingsUtil.get_settings().setValue('allow_remote_control', SettingsUtil.bool_to_str(self.remote_control_chb.isChecked()))
         self.client.sendStatusToPeers(self.retrieve_status())
 
     def screenCountChanged(self, screen):
@@ -2520,7 +2520,7 @@ class ChatDialog(QDialog):
 
     def allow_system_msgs_handler(self):
         state = self.allow_system_msgs_chb.isChecked()
-        get_settings().setValue('allow_system_msgs', bool_to_str(state))
+        SettingsUtil.get_settings().setValue('allow_system_msgs', SettingsUtil.bool_to_str(state))
 
     def appendMessage(self, _from, message):
         if (not _from) or (not message):
@@ -2714,23 +2714,29 @@ def excepthook(exc_type, exc_value, exc_tb):
             stray_icon.hide()
     sys.exit()
 
-def init_settings(app):
+class SettingsUtil:
 
-    QCoreApplication.setOrganizationName("Sergei Krumas");
-    QCoreApplication.setOrganizationDomain("sergei-krumas.com");
-    QCoreApplication.setApplicationName("LAN-DESKTOP");
+    @staticmethod
+    def init_settings(app):
 
-    filepath = os.path.join(os.path.dirname(__file__), f'lan_desktop.{platform.system()}.settings')
-    Globals.settings = QSettings(filepath, QSettings.IniFormat)
+        QCoreApplication.setOrganizationName("Sergei Krumas");
+        QCoreApplication.setOrganizationDomain("sergei-krumas.com");
+        QCoreApplication.setApplicationName("LAN-DESKTOP");
 
-def get_settings():
-    return Globals.settings
+        filepath = os.path.join(os.path.dirname(__file__), f'lan_desktop.{platform.system()}.settings')
+        Globals.settings = QSettings(filepath, QSettings.IniFormat)
 
-def bool_to_str(x):
-    return str(int(x))
+    @staticmethod
+    def get_settings():
+        return Globals.settings
 
-def str_to_bool(x):
-    return bool(int(x))
+    @staticmethod
+    def bool_to_str(x):
+        return str(int(x))
+
+    @staticmethod
+    def str_to_bool(x):
+        return bool(int(x))
 
 def main():
 
@@ -2740,7 +2746,7 @@ def main():
 
     app = QApplication(args)
 
-    init_settings(app)
+    SettingsUtil.init_settings(app)
 
     # print(f'main thread: {QThread.currentThreadId()}')
 
