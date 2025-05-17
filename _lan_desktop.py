@@ -2600,7 +2600,7 @@ class ChatDialog(QDialog):
 
                 for n in range(self.peersList.count()):
                     item = self.peersList.item(n)
-                    if peer_addr in item.text():
+                    if peer_addr == item.data(Qt.UserRole).ip:
                         items_to_delete.append(item)
 
                 for item in items_to_delete:
