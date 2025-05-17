@@ -2298,7 +2298,7 @@ class ChatDialog(QDialog):
         hor_layout.addWidget(self.allow_system_msgs_chb)
         self.allow_system_msgs_chb.stateChanged.connect(self.allow_system_msgs_handler)
 
-        self.ENABLE_PRINT = QCheckBox('Console output')
+        self.ENABLE_PRINT = QCheckBox('Console output (unfriendly to FPS)')
         hor_layout.addWidget(self.ENABLE_PRINT)
         def trigger_console_output_chb():
             Globals.ENABLE_PRINT = self.ENABLE_PRINT.isChecked()
