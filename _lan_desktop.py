@@ -1650,10 +1650,8 @@ class Connection(QObject):
                                     port = self.socket.peerPort()
 
                                     # print(f'reading thread: {QThread.currentThreadId()}', flush=True)
-                                    # writing_lock.acquire()
                                     with writing_lock:
                                         Globals.update_peers_list(addr, port, mac)
-                                    # writing_lock.release()
 
                                     self.username = f'{msg}@{addr}:{port} // {mac}'
 
