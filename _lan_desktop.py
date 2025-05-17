@@ -343,7 +343,7 @@ class Utils:
         for ip_addr, mac in Utils.retrieve_ip_mac_pairs():
             if local_address_string.endswith(ip_addr):
                 return mac
-        return 'Fuck! This is a disaster! MAC not found!'
+        return 'MAC not found!'
 
     @staticmethod
     def socket_info_to_chat(intro, socket):
@@ -409,9 +409,9 @@ class TransparentWidget(QWidget):
         for n, log_entry in enumerate(self.keys_log):
             status, key_value = log_entry
             if status == 'down':
-                out = 'Зажата '
+                out = 'key pressed '
             elif status == 'up':
-                out = 'Отпущена '
+                out = 'key released '
             if key_value is not None:
                 if key_value.startswith('Key_'):
                     key_name = key_value[4:]
@@ -847,7 +847,7 @@ class Portal(QWidget):
             if self.disconnect:
 
                 delta = int(time.time() - self.update_timestamp)
-                text = f'Ведомый компьютер недоступен уже {delta} секунд.\nСкорее всего, связь потеряна.'
+                text = f'Remote computer is unreachable for {delta} seconds already\nChances are the connection is lost.'
                 self.drawMessageInCenter(painter, text)
 
             if self.isKeyTranslationErrorVisible():
@@ -1452,9 +1452,9 @@ class FileTransfer(QTimer):
 
 
             for conn in chat_dialog.client.get_peers_connections():
-                msg = f'Отправляется часть файла {self.filename}' + \
-                            f' размером {len(filechunk)} байт' + \
-                            f' на адрес {conn.socket.peerAddress().toString()}'
+                msg = f'Trying to send file chunk {self.filename}' + \
+                            f' of size {len(filechunk)} bytes' + \
+                            f' to address {conn.socket.peerAddress().toString()}'
                 chat_dialog.appendSystemMessage(msg)
 
                 conn.socket.write(Utils.prepare_data_to_write(serial_data, binary_data))
@@ -1480,7 +1480,7 @@ class FileTransfer(QTimer):
         filename = file_chunk_info['filename']
         chunk_size = file_chunk_info['chunk_size']
 
-        chat_dialog.appendSystemMessage(f'От {peer_address_string} получена часть файла {filename}, размер которой {chunk_size}')
+        chat_dialog.appendSystemMessage(f'From address {peer_address_string} a file chunk has been received {filename}, its size is {chunk_size}')
 
         if md5_hash not in cls.receiving_files:
             cls.receiving_files_objs[md5_hash] = open(md5_hash, 'wb')
@@ -1507,7 +1507,7 @@ class FileTransfer(QTimer):
                     pass
                 time.sleep(1)
 
-            chat_dialog.appendSystemMessage(f'От {peer_address_string} получен весь файл {filename}, размер которого {total_size}', bold=True)
+            chat_dialog.appendSystemMessage(f'From address {peer_address_string} the whole file has been received {filename}, its size is {total_size}', bold=True)
 
 
 
@@ -1795,11 +1795,11 @@ class Connection(QObject):
                                             chat_dialog.appendSystemMessage(f'Remote host wants to capture screen number {capture_index+1}')
 
                                 else:
-                                    chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня {parsed_data}')
+                                    chat_dialog.appendSystemMessage(f'Undefined crap has been received {parsed_data}')
 
 
                             else:
-                                chat_dialog.appendSystemMessage(f'Пришла какая-то непонятная хуйня, да и ещё без заголовка {parsed_data}')
+                                chat_dialog.appendSystemMessage(f'Undefined crap has been received, and there is no header section within {parsed_data}')
 
                         if binary_data:
 
