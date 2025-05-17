@@ -516,12 +516,12 @@ class Portal(QWidget):
         self.editing_mode_btn_rect_pressed = False
 
         keyboard_send_actions_data = (
-            ('Послать Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
-            ('Послать Ctrl+Break', ['ctrl', 'break']),
-            ('Послать Insert', ['insert']),
-            ('Послать Print Screen', ['printscreen']),
-            ('Послать Alt+PrintScreen', ['alt', 'printscreen']),
-            ('Послать Shift+Tab', ['shift', 'tab']),
+            ('Send Ctrl+Alt+Del', ['ctrl', 'alt', 'del']),
+            ('Send Ctrl+Break', ['ctrl', 'break']),
+            ('Send Insert', ['insert']),
+            ('Send Print Screen', ['printscreen']),
+            ('Send Alt+PrintScreen', ['alt', 'printscreen']),
+            ('Send Shift+Tab', ['shift', 'tab']),
         )
         keyboardMenu = self.menuBar.addMenu('Keyboard')
         def send_hotkey(hotkey_list):
@@ -2520,7 +2520,7 @@ class ChatDialog(QDialog):
 
     def update_app(self):
         ret = QMessageBox.question(None,
-            "Вопрос", "Download update from repository and install?",
+            "The question", "Download update from repository and install?",
             QMessageBox.Yes | QMessageBox.No | QMessageBox.Close,
         )
         if ret == QMessageBox.Yes:
