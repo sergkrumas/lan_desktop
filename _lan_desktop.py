@@ -191,6 +191,7 @@ class Utils:
 
     @staticmethod
     def make_capture_frame(capture_index):
+        # TODO: отрефакторить на манер min/max(iterable, key=...)
         desktop = QDesktopWidget()
         MAX = 1000000000
         left = MAX
@@ -206,12 +207,12 @@ class Utils:
             right = max(r.right(), right)
             top = min(r.top(), top)
             bottom = max(r.bottom(), bottom)
+
         if capture_index == -1:
             capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
         else:
             capture_rect = QRect(QPoint(left, top), QPoint(right, bottom))
 
-        # print(capture_rect)
         qimage = QImage(
             capture_rect.width(),
             capture_rect.height(),
