@@ -191,22 +191,17 @@ class Utils:
 
     @staticmethod
     def make_capture_frame(capture_index):
-        # TODO: отрефакторить на манер min/max(iterable, key=...)
         desktop = QDesktopWidget()
-        MAX = 1000000000
-        left = MAX
-        right = -MAX
-        top = MAX
-        bottom = -MAX
-        for i in range(0, desktop.screenCount()):
-            if capture_index != -1:
-                if i != capture_index:
-                    continue
-            r = desktop.screenGeometry(screen=i)
-            left = min(r.left(), left)
-            right = max(r.right(), right)
-            top = min(r.top(), top)
-            bottom = max(r.bottom(), bottom)
+        # (11 фев 26) оставляю тут некомпилируемую дичь из запятых, чтобы
+        # вспомнить из-за чего, возможно, не будет работать захват,
+        # так как именно сейчас у меня нет возможности проверить захват
+        ,,,
+        rects = [desktop.screenGeometry(screen=i) for i in range(desktop.screenCount()) \
+                                                    if capture_index == -1 or i == capture_index]
+        left = min(r.left() for r in rects)
+        right = max(r.right() for r in rects)
+        top = min(r.top() for r in rects)
+        bottom = max(r.bottom() for r in rects)
 
         if capture_index == -1:
             capture_rect = QRect(QPoint(left, top), QPoint(right+1, bottom+1))
