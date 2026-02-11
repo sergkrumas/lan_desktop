@@ -58,18 +58,12 @@ def fit_rect_into_rect(source_rect, input_rect, float_mode=False):
         return result.toRect()
 
 def get_bounding_pointsF(points):
-    MAX = float(sys.maxsize)
-    left = MAX
-    right = -MAX
-    top = MAX
-    bottom = -MAX
     if not points:
         raise Exception("Empty list!")
-    for p in points:
-        left = min(p.x(), left)
-        right = max(p.x(), right)
-        top = min(p.y(), top)
-        bottom = max(p.y(), bottom)
+    left = min(p.x() for p in points)
+    right = max(p.x() for p in points)
+    top = min(p.y() for p in points)
+    bottom = max(p.y() for p in points)
     return QPointF(left, top), QPointF(right, bottom)
 
 def build_valid_rect(p1, p2):
